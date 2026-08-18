@@ -37,9 +37,16 @@ function renderTopbar(title, sub) {
 }
 
 async function initPage(activePage, title, sub) {
-  const session = await requireAuth();
-  if (!session) return null;
+  // Guard cepat: kalau tidak ada token sama sekali, langsung tendang ke login
+  // tanpa menunggu network — tidak ada yang perlu dirender.
+  if (!API.getToken()) {
+    window.location.href = 'index.html';
+    return null;
+  }
 
+  // Render sidebar & topbar SEGERA dari data sesi lokal (localStorage), tanpa
+  // menunggu round-trip ke server. Ini menghilangkan efek "flash" saat pindah
+  // halaman, karena sidebar tidak lagi menunggu jaringan sebelum muncul.
   document.getElementById('sidebarMount').innerHTML = renderSidebar(activePage);
   document.getElementById('topbarMount').innerHTML = renderTopbar(title, sub);
 
@@ -48,5 +55,18 @@ async function initPage(activePage, title, sub) {
     window.location.href = 'index.html';
   });
 
-  return session;
+  // Validasi sesi ke server berjalan di belakang layar. Kalau ternyata token
+  // sudah tidak valid (expired / logout dari perangkat lain), baru redirect.
+  API.checkSession().then((check) => {
+    if (!check.ok) {
+      API.clearToken();
+      window.location.href = 'index.html';
+    }
+  }).catch(() => {
+    // Kegagalan jaringan sesaat tidak langsung melempar user ke login;
+    // biarkan mereka tetap bekerja, request API lain akan menangani jika
+    // token benar-benar tidak valid.
+  });
+
+  return { ok: true };
 }
