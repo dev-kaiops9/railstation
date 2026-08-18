@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Pegawai — RailStatiON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <main class="main">
+    <div id="topbarMount"></div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-target="tabDirektori">Direktori Pegawai</button>
+      <button class="tab-btn" data-target="tabJadwal">Jadwal Dinas</button>
+      <button class="tab-btn" data-target="tabSertifikasi">Sertifikasi &amp; Kecakapan</button>
+    </div>
+
+    <div class="tab-panel active" id="tabDirektori"><div id="pegawaiPanel"></div></div>
+    <div class="tab-panel" id="tabJadwal"><div id="jadwalDinasPanel"></div></div>
+    <div class="tab-panel" id="tabSertifikasi"><div id="sertifikasiPanel"></div></div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/crud-page.js"></script>
+<script>
+(async () => {
+  const session = await initPage('pegawai', 'Data Pegawai & Kepegawaian', 'Direktori pegawai, jadwal dinas, dan kompetensi.');
+  if (!session) return;
+
+  initTabs('tabs');
+  mountCrudPanel('pegawaiPanel', 'pegawai');
+  mountCrudPanel('jadwalDinasPanel', 'jadwalDinas');
+  mountCrudPanel('sertifikasiPanel', 'sertifikasi');
+})();
+</script>
+</body>
+</html>

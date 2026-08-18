@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RailLibrary — RailStatiON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <main class="main">
+    <div id="topbarMount"></div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-target="tabDokumen">Pusat Dokumen</button>
+      <button class="tab-btn" data-target="tabUsers">Manajemen Pengguna</button>
+    </div>
+
+    <div class="tab-panel active" id="tabDokumen"><div id="dokumenPanel"></div></div>
+
+    <div class="tab-panel" id="tabUsers">
+      <div class="toolbar">
+        <div></div>
+        <button class="btn btn-primary" id="addUserBtn">+ Tambah User</button>
+      </div>
+      <div class="card-panel">
+        <table>
+          <thead><tr><th>Nama</th><th>Username</th><th>Role</th><th></th></tr></thead>
+          <tbody id="usersTbody"><tr><td colspan="4" class="loading-text">Memuat...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="userModalBackdrop">
+      <div class="modal">
+        <h3>Tambah Pengguna</h3>
+        <div class="error-msg" id="userModalError"></div>
+        <form id="userForm">
+          <div class="field"><label>Nama Lengkap</label><input type="text" id="u_nama" required></div>
+          <div class="field"><label>Username</label><input type="text" id="u_username" required></div>
+          <div class="field"><label>Password</label><input type="password" id="u_password" required></div>
+          <div class="field"><label>Role</label>
+            <select id="u_role">
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="userCancelBtn">Batal</button>
+            <button type="submit" class="btn btn-primary" id="userSaveBtn">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/crud-page.js"></script>
+<script>
+(async () => {
+  const session = await initPage('library', 'RailLibrary', 'Dokumen referensi operasional dan manajemen akses pengguna.');
+  if (!session) return;
+
+  initTabs('tabs');
+  mountCrudPanel('dokumenPanel', 'dokumen');
+
+  const usersTbody = document.getElementById('usersTbody');
+  const userModal = document.getElementById('userModalBackdrop');
+  const userForm = document.getElementById('userForm');
+  const userModalError = document.getElementById('userModalError');
+
+  async function loadUsers() {
+    usersTbody.innerHTML = '<tr><td colspan="4" class="loading-text">Memuat...</td></tr>';
+    const result = await API.listUsers();
+    if (!result.ok) {
+      usersTbody.innerHTML = `<tr><td colspan="4" class="loading-text">Gagal memuat: ${result.error}</td></tr>`;
+      return;
+    }
+    usersTbody.innerHTML = result.data.map(u => `
+      <tr>
+        <td>${escapeHtml(u.nama)}</td>
+        <td>${escapeHtml(u.username)}</td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-purple' : 'badge-blue'}">${escapeHtml(u.role)}</span></td>
+        <td>
+          ${u.username === 'admin' ? '' : `<div class="row-actions"><button class="danger" data-remove-user="${u.username}">Hapus</button></div>`}
+        </td>
+      </tr>
+    `).join('');
+    usersTbody.querySelectorAll('[data-remove-user]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Hapus user "${btn.dataset.removeUser}"?`)) return;
+        const res = await API.removeUser(btn.dataset.removeUser);
+        if (!res.ok) { alert('Gagal: ' + res.error); return; }
+        loadUsers();
+      });
+    });
+  }
+  loadUsers();
+
+  document.getElementById('addUserBtn').addEventListener('click', () => {
+    userForm.reset();
+    userModalError.classList.remove('show');
+    userModal.classList.add('show');
+  });
+  document.getElementById('userCancelBtn').addEventListener('click', () => userModal.classList.remove('show'));
+
+  userForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('userSaveBtn');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    userModalError.classList.remove('show');
+    try {
+      const data = {
+        nama: document.getElementById('u_nama').value.trim(),
+        username: document.getElementById('u_username').value.trim(),
+        password: document.getElementById('u_password').value,
+        role: document.getElementById('u_role').value,
+      };
+      const result = await API.addUser(data);
+      if (!result.ok) throw new Error(result.error);
+      userModal.classList.remove('show');
+      loadUsers();
+    } catch (err) {
+      userModalError.textContent = err.message;
+      userModalError.classList.add('show');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Simpan';
+    }
+  });
+})();
+</script>
+</body>
+</html>

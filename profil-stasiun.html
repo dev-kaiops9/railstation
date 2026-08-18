@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profil Stasiun — RailStatiON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <main class="main">
+    <div id="topbarMount"></div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-target="tabInfo">Informasi &amp; Lokasi</button>
+      <button class="tab-btn" data-target="tabFasilitas">Fasilitas &amp; Layanan</button>
+      <button class="tab-btn" data-target="tabJadwalKA">Jadwal KA Berhenti</button>
+    </div>
+
+    <div class="tab-panel active" id="tabInfo">
+      <div class="panel" style="max-width:640px;">
+        <h3>Identitas Stasiun</h3>
+        <div class="error-msg" id="profilError"></div>
+        <form id="profilForm">
+          <div class="grid-2">
+            <div class="field"><label>Nama Stasiun</label><input type="text" id="p_nama"></div>
+            <div class="field"><label>Singkatan</label><input type="text" id="p_singkatan"></div>
+            <div class="field"><label>Kelas Stasiun</label><input type="text" id="p_kelas"></div>
+            <div class="field"><label>Kode Stasiun</label><input type="text" id="p_kode"></div>
+            <div class="field"><label>Waktu Operasional</label><input type="text" id="p_waktuOperasional" placeholder="cth. 05:00 - 23:00"></div>
+            <div class="field"><label>KM (Kilometer Jalur)</label><input type="text" id="p_km"></div>
+            <div class="field"><label>Ketinggian (mdpl)</label><input type="text" id="p_ketinggian"></div>
+            <div class="field"><label>Wilayah</label><input type="text" id="p_wilayah"></div>
+          </div>
+          <div class="field"><label>Alamat</label><input type="text" id="p_alamat"></div>
+          <button type="submit" class="btn btn-primary" id="profilSaveBtn">Simpan Profil</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tabFasilitas"><div id="fasilitasPanel"></div></div>
+    <div class="tab-panel" id="tabJadwalKA"><div id="jadwalKAPanel"></div></div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/crud-page.js"></script>
+<script>
+(async () => {
+  const session = await initPage('profil-stasiun', 'Profil Stasiun', 'Identitas, fasilitas, dan jadwal KA yang berhenti di stasiun.');
+  if (!session) return;
+
+  initTabs('tabs');
+  mountCrudPanel('fasilitasPanel', 'fasilitas');
+  mountCrudPanel('jadwalKAPanel', 'jadwalKA');
+
+  // Muat profil singleton
+  const res = await API.getProfil();
+  if (res.ok) {
+    const p = res.data;
+    ['nama','singkatan','kelas','kode','waktuOperasional','km','ketinggian','alamat','wilayah'].forEach(k => {
+      const el = document.getElementById('p_' + k);
+      if (el) el.value = p[k] || '';
+    });
+  }
+
+  document.getElementById('profilForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('profilSaveBtn');
+    const errEl = document.getElementById('profilError');
+    errEl.classList.remove('show');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    const data = {};
+    ['nama','singkatan','kelas','kode','waktuOperasional','km','ketinggian','alamat','wilayah'].forEach(k => {
+      data[k] = document.getElementById('p_' + k).value.trim();
+    });
+    try {
+      const result = await API.saveProfil(data);
+      if (!result.ok) throw new Error(result.error);
+      btn.textContent = 'Tersimpan ✓';
+      setTimeout(() => { btn.textContent = 'Simpan Profil'; }, 1500);
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('show');
+      btn.textContent = 'Simpan Profil';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>

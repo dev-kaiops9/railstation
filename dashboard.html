@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — RailStatiON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <main class="main">
+    <div id="topbarMount"></div>
+
+    <div class="stat-grid" id="statGrid">
+      <div class="stat-card"><div class="icon-badge green">&#9787;</div><div><div class="label">Pegawai Aktif</div><div class="value" id="statPegawai">—</div></div></div>
+      <div class="stat-card"><div class="icon-badge blue">&#8594;</div><div><div class="label">Perjalanan Hari Ini</div><div class="value" id="statPerka">—</div></div></div>
+      <div class="stat-card"><div class="icon-badge orange">&#9873;</div><div><div class="label">Gangguan Aktif</div><div class="value" id="statGangguan">—</div></div></div>
+      <div class="stat-card"><div class="icon-badge purple">&#9925;</div><div><div class="label">Estimasi Cuaca</div><div class="value" id="statCuaca">Cerah</div></div></div>
+    </div>
+
+    <div class="panel-grid">
+      <div class="panel">
+        <h3>Ringkasan Operasional</h3>
+        <p style="color:var(--text-muted); font-size:13px; line-height:1.7;">
+          Dashboard ini menampilkan ringkasan real-time operasional stasiun: jumlah pegawai aktif,
+          jumlah perjalanan kereta api hari ini, dan gangguan operasional yang masih berjalan.
+          Gunakan menu di samping untuk masuk ke tiap modul.
+        </p>
+      </div>
+      <div class="panel">
+        <h3>Status Dinas Berjalan</h3>
+        <div class="duty-list" id="dutyList">
+          <div class="loading-text">Memuat...</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async () => {
+  const session = await initPage('dashboard', 'Dashboard', `Selamat datang kembali, ${API.getUserInfo().nama || ''}`);
+  if (!session) return;
+
+  const statsRes = await API.dashboardStats();
+  if (statsRes.ok) {
+    document.getElementById('statPegawai').textContent = statsRes.data.pegawaiAktif;
+    document.getElementById('statPerka').textContent = statsRes.data.perjalananHariIni;
+    document.getElementById('statGangguan').textContent = statsRes.data.gangguanAktif;
+  }
+
+  const pegawaiRes = await API.list('pegawai');
+  const dutyList = document.getElementById('dutyList');
+  if (pegawaiRes.ok) {
+    const aktif = pegawaiRes.data.filter(p => p.status === 'Aktif').slice(0, 6);
+    dutyList.innerHTML = aktif.length
+      ? aktif.map(p => `<div class="duty-item"><span class="dot"></span><span class="name">${escapeHtml(p.nama)}</span><span class="role">— ${escapeHtml(p.jabatan || '-')}</span></div>`).join('')
+      : '<div class="loading-text">Belum ada data pegawai aktif.</div>';
+  } else {
+    dutyList.innerHTML = '<div class="loading-text">Gagal memuat data.</div>';
+  }
+})();
+</script>
+</body>
+</html>

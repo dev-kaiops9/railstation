@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Perka — RailStatiON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <main class="main">
+    <div id="topbarMount"></div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-target="tabPerka">Perjalanan Kereta Api</button>
+      <button class="tab-btn" data-target="tabJalur">Jalur &amp; Emplasemen</button>
+    </div>
+
+    <div class="tab-panel active" id="tabPerka"><div id="perkaPanel"></div></div>
+    <div class="tab-panel" id="tabJalur"><div id="jalurPanel"></div></div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/crud-page.js"></script>
+<script>
+(async () => {
+  const session = await initPage('perka', 'Data Perka', 'Perjalanan kereta api dan spesifikasi jalur/emplasemen.');
+  if (!session) return;
+
+  initTabs('tabs');
+  mountCrudPanel('perkaPanel', 'perka');
+  mountCrudPanel('jalurPanel', 'jalur');
+})();
+</script>
+</body>
+</html>

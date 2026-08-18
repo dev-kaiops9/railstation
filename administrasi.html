@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administrasi &amp; Keselamatan — RailStatiON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <main class="main">
+    <div id="topbarMount"></div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-target="tabIBPR">IBPR</button>
+      <button class="tab-btn" data-target="tabFormulir">Penjagaan Bentuk-Bentuk</button>
+      <button class="tab-btn" data-target="tabKRSI">Penggunaan KR &amp; SI</button>
+      <button class="tab-btn" data-target="tabGangguan">Gangguan Operasional</button>
+    </div>
+
+    <div class="tab-panel active" id="tabIBPR"><div id="ibprPanel"></div></div>
+    <div class="tab-panel" id="tabFormulir"><div id="formulirPanel"></div></div>
+    <div class="tab-panel" id="tabKRSI"><div id="krsiPanel"></div></div>
+    <div class="tab-panel" id="tabGangguan"><div id="gangguanPanel"></div></div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/crud-page.js"></script>
+<script>
+(async () => {
+  const session = await initPage('administrasi', 'Administrasi & Keselamatan', 'IBPR, formulir administrasi, penggunaan KR/SI, dan gangguan operasional.');
+  if (!session) return;
+
+  initTabs('tabs');
+  mountCrudPanel('ibprPanel', 'ibpr');
+  mountCrudPanel('formulirPanel', 'formulirAdmin');
+  mountCrudPanel('krsiPanel', 'penggunaanKRSI');
+  mountCrudPanel('gangguanPanel', 'gangguan');
+})();
+</script>
+</body>
+</html>

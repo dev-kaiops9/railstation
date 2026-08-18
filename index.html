@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masuk — RailStatiON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="login-shell">
+  <aside class="login-aside">
+    <div class="brand"><div class="mark">RS</div><span>RailStatiON</span></div>
+    <div>
+      <h1>Satu dashboard untuk seluruh operasional stasiun.</h1>
+      <p class="desc">Kepegawaian, perjalanan kereta api, keselamatan kerja, dan dokumentasi — terpusat dan real-time.</p>
+    </div>
+    <div class="footnote">Data tersimpan aman di Google Sheets &amp; Google Drive kantor.</div>
+  </aside>
+
+  <main class="login-main">
+    <div class="login-card">
+      <h2>Masuk ke akun</h2>
+      <p class="sub">Gunakan akun yang diberikan admin stasiun.</p>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <form id="loginForm">
+        <div class="field">
+          <label for="username">Username</label>
+          <input type="text" id="username" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary full" id="loginBtn">Masuk</button>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+const form = document.getElementById('loginForm');
+const errorMsg = document.getElementById('errorMsg');
+const loginBtn = document.getElementById('loginBtn');
+
+(async () => {
+  if (API.getToken()) {
+    const check = await API.checkSession();
+    if (check.ok) window.location.href = 'dashboard.html';
+  }
+})();
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorMsg.classList.remove('show');
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Memproses...';
+
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  try {
+    const result = await API.login(username, password);
+    if (result.ok) window.location.href = 'dashboard.html';
+    else showError(result.error || 'Login gagal');
+  } catch (err) {
+    showError('Tidak bisa terhubung ke server. Coba lagi.');
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Masuk';
+  }
+});
+
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.classList.add('show');
+}
+</script>
+</body>
+</html>
