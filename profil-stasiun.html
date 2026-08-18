@@ -32,8 +32,37 @@
     </div>
 
     <div class="tab-panel active" id="tabInfo">
-      <div class="panel" style="max-width:640px;">
-        <h3>Identitas Stasiun</h3>
+      <div class="section">
+        <div class="section-head">
+          <h3>Identitas Stasiun</h3>
+          <button class="btn btn-primary btn-sm" id="openProfilManage">Edit Data</button>
+        </div>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>Informasi Stasiun</h4>
+            <div class="info-row"><span class="k">Nama Stasiun</span><span class="v" id="v_nama">—</span></div>
+            <div class="info-row"><span class="k">Singkatan</span><span class="v" id="v_singkatan">—</span></div>
+            <div class="info-row"><span class="k">Kelas</span><span class="v" id="v_kelas">—</span></div>
+            <div class="info-row"><span class="k">Kode</span><span class="v" id="v_kode">—</span></div>
+            <div class="info-row"><span class="k">Waktu Operasional</span><span class="v" id="v_waktuOperasional">—</span></div>
+          </div>
+          <div class="info-card">
+            <h4>Lokasi</h4>
+            <div class="info-row"><span class="k">KM (Kilometer Jalur)</span><span class="v" id="v_km">—</span></div>
+            <div class="info-row"><span class="k">Ketinggian (mdpl)</span><span class="v" id="v_ketinggian">—</span></div>
+            <div class="info-row"><span class="k">Wilayah</span><span class="v" id="v_wilayah">—</span></div>
+            <div class="info-row"><span class="k">Alamat</span><span class="v" id="v_alamat">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop manage-backdrop" id="profilManageBackdrop">
+      <div class="modal">
+        <div class="modal-head">
+          <h3>Edit Identitas Stasiun</h3>
+          <button class="modal-close" id="profilManageClose" aria-label="Tutup">&times;</button>
+        </div>
         <div class="error-msg" id="profilError"></div>
         <form id="profilForm">
           <div class="grid-2">
@@ -47,7 +76,10 @@
             <div class="field"><label>Wilayah</label><input type="text" id="p_wilayah"></div>
           </div>
           <div class="field"><label>Alamat</label><input type="text" id="p_alamat"></div>
-          <button type="submit" class="btn btn-primary" id="profilSaveBtn">Simpan Profil</button>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="profilCancelBtn">Batal</button>
+            <button type="submit" class="btn btn-primary" id="profilSaveBtn">Simpan Profil</button>
+          </div>
         </form>
       </div>
     </div>
@@ -67,18 +99,34 @@
   if (!session) return;
 
   initTabs('tabs');
-  mountCrudPanel('fasilitasPanel', 'fasilitas');
-  mountCrudPanel('jadwalKAPanel', 'jadwalKA');
+  mountCrudSection('fasilitasPanel', 'fasilitas', 'Fasilitas Stasiun');
+  mountCrudSection('jadwalKAPanel', 'jadwalKA', 'Kereta Api yang Berhenti');
+
+  const profilKeys = ['nama','singkatan','kelas','kode','waktuOperasional','km','ketinggian','alamat','wilayah'];
+  const profilManageBackdrop = document.getElementById('profilManageBackdrop');
+
+  function renderProfilView(p) {
+    profilKeys.forEach(k => {
+      const el = document.getElementById('v_' + k);
+      if (el) el.textContent = p[k] || '—';
+    });
+  }
 
   // Muat profil singleton
   const res = await API.getProfil();
   if (res.ok) {
     const p = res.data;
-    ['nama','singkatan','kelas','kode','waktuOperasional','km','ketinggian','alamat','wilayah'].forEach(k => {
+    renderProfilView(p);
+    profilKeys.forEach(k => {
       const el = document.getElementById('p_' + k);
       if (el) el.value = p[k] || '';
     });
   }
+
+  document.getElementById('openProfilManage').addEventListener('click', () => profilManageBackdrop.classList.add('show'));
+  document.getElementById('profilManageClose').addEventListener('click', () => profilManageBackdrop.classList.remove('show'));
+  document.getElementById('profilCancelBtn').addEventListener('click', () => profilManageBackdrop.classList.remove('show'));
+  profilManageBackdrop.addEventListener('click', (e) => { if (e.target === profilManageBackdrop) profilManageBackdrop.classList.remove('show'); });
 
   document.getElementById('profilForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -87,14 +135,18 @@
     errEl.classList.remove('show');
     btn.disabled = true; btn.textContent = 'Menyimpan...';
     const data = {};
-    ['nama','singkatan','kelas','kode','waktuOperasional','km','ketinggian','alamat','wilayah'].forEach(k => {
+    profilKeys.forEach(k => {
       data[k] = document.getElementById('p_' + k).value.trim();
     });
     try {
       const result = await API.saveProfil(data);
       if (!result.ok) throw new Error(result.error);
+      renderProfilView(data);
       btn.textContent = 'Tersimpan ✓';
-      setTimeout(() => { btn.textContent = 'Simpan Profil'; }, 1500);
+      setTimeout(() => {
+        btn.textContent = 'Simpan Profil';
+        profilManageBackdrop.classList.remove('show');
+      }, 700);
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.add('show');

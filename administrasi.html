@@ -52,10 +52,10 @@
   if (!session) return;
 
   initTabs('tabs');
-  mountCrudPanel('ibprPanel', 'ibpr');
-  mountCrudPanel('formulirPanel', 'formulirAdmin');
-  mountCrudPanel('krsiPanel', 'penggunaanKRSI');
-  mountCrudPanel('gangguanPanel', 'gangguan');
+  mountCrudSection('ibprPanel', 'ibpr', 'Identifikasi Bahaya dan Penilaian Risiko (IBPR)');
+  mountCrudSection('formulirPanel', 'formulirAdmin', 'Penjagaan Bentuk-Bentuk');
+  mountCrudSection('krsiPanel', 'penggunaanKRSI', 'Penggunaan KR & SI');
+  mountCrudSection('gangguanPanel', 'gangguan', 'Laporan Gangguan Operasional');
 })();
 </script>
 </body>

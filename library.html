@@ -30,15 +30,36 @@
     <div class="tab-panel active" id="tabDokumen"><div id="dokumenPanel"></div></div>
 
     <div class="tab-panel" id="tabUsers">
-      <div class="toolbar">
-        <div></div>
-        <button class="btn btn-primary" id="addUserBtn">+ Tambah User</button>
+      <div class="section">
+        <div class="section-head">
+          <h3>Manajemen Pengguna</h3>
+          <button class="btn btn-primary btn-sm" id="openUsersManage">Edit Data</button>
+        </div>
+        <div class="card-panel">
+          <table>
+            <thead><tr><th>Nama</th><th>Username</th><th>Role</th></tr></thead>
+            <tbody id="usersViewTbody"><tr><td colspan="3" class="loading-text">Memuat...</td></tr></tbody>
+          </table>
+        </div>
       </div>
-      <div class="card-panel">
-        <table>
-          <thead><tr><th>Nama</th><th>Username</th><th>Role</th><th></th></tr></thead>
-          <tbody id="usersTbody"><tr><td colspan="4" class="loading-text">Memuat...</td></tr></tbody>
-        </table>
+    </div>
+
+    <div class="modal-backdrop manage-backdrop" id="usersManageBackdrop">
+      <div class="modal manage-modal">
+        <div class="modal-head">
+          <h3>Kelola Manajemen Pengguna</h3>
+          <button class="modal-close" id="usersManageClose" aria-label="Tutup">&times;</button>
+        </div>
+        <div class="toolbar">
+          <div></div>
+          <button class="btn btn-primary" id="addUserBtn">+ Tambah User</button>
+        </div>
+        <div class="card-panel">
+          <table>
+            <thead><tr><th>Nama</th><th>Username</th><th>Role</th><th></th></tr></thead>
+            <tbody id="usersTbody"><tr><td colspan="4" class="loading-text">Memuat...</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -76,18 +97,36 @@
   if (!session) return;
 
   initTabs('tabs');
-  mountCrudPanel('dokumenPanel', 'dokumen');
+  mountCrudSection('dokumenPanel', 'dokumen', 'Pusat Dokumen');
 
   const usersTbody = document.getElementById('usersTbody');
+  const usersViewTbody = document.getElementById('usersViewTbody');
+  const usersManageBackdrop = document.getElementById('usersManageBackdrop');
   const userModal = document.getElementById('userModalBackdrop');
   const userForm = document.getElementById('userForm');
   const userModalError = document.getElementById('userModalError');
 
+  function renderUsersView(list) {
+    if (list.length === 0) {
+      usersViewTbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">Belum ada data. Klik "Edit Data" untuk mulai.</div></td></tr>';
+      return;
+    }
+    usersViewTbody.innerHTML = list.map(u => `
+      <tr>
+        <td>${escapeHtml(u.nama)}</td>
+        <td>${escapeHtml(u.username)}</td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-purple' : 'badge-blue'}">${escapeHtml(u.role)}</span></td>
+      </tr>
+    `).join('');
+  }
+
   async function loadUsers() {
     usersTbody.innerHTML = '<tr><td colspan="4" class="loading-text">Memuat...</td></tr>';
+    usersViewTbody.innerHTML = '<tr><td colspan="3" class="loading-text">Memuat...</td></tr>';
     const result = await API.listUsers();
     if (!result.ok) {
       usersTbody.innerHTML = `<tr><td colspan="4" class="loading-text">Gagal memuat: ${result.error}</td></tr>`;
+      usersViewTbody.innerHTML = `<tr><td colspan="3" class="loading-text">Gagal memuat: ${result.error}</td></tr>`;
       return;
     }
     usersTbody.innerHTML = result.data.map(u => `
@@ -108,8 +147,13 @@
         loadUsers();
       });
     });
+    renderUsersView(result.data);
   }
   loadUsers();
+
+  document.getElementById('openUsersManage').addEventListener('click', () => usersManageBackdrop.classList.add('show'));
+  document.getElementById('usersManageClose').addEventListener('click', () => usersManageBackdrop.classList.remove('show'));
+  usersManageBackdrop.addEventListener('click', (e) => { if (e.target === usersManageBackdrop) usersManageBackdrop.classList.remove('show'); });
 
   document.getElementById('addUserBtn').addEventListener('click', () => {
     userForm.reset();

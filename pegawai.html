@@ -47,9 +47,9 @@
   if (!session) return;
 
   initTabs('tabs');
-  mountCrudPanel('pegawaiPanel', 'pegawai');
-  mountCrudPanel('jadwalDinasPanel', 'jadwalDinas');
-  mountCrudPanel('sertifikasiPanel', 'sertifikasi');
+  mountCrudSection('pegawaiPanel', 'pegawai', 'Data Pegawai');
+  mountCrudSection('jadwalDinasPanel', 'jadwalDinas', 'Daftar Dinasan');
+  mountCrudSection('sertifikasiPanel', 'sertifikasi', 'Sertifikasi & Tanda Kecakapan');
 })();
 </script>
 </body>

@@ -1,27 +1,52 @@
 /**
- * Generic CRUD engine.
- * Memasang satu blok "tabel + toolbar + modal form" ke dalam container,
- * didorong oleh konfigurasi entitas di entities.js. Dipakai berulang oleh
- * semua modul (Pegawai, Perka, Administrasi, dst) supaya tidak duplikasi kode.
+ * Generic CRUD engine (tampilan card).
+ * Tiap section menampilkan data secara read-only (tabel ringkas, tanpa aksi
+ * per baris) dengan satu tombol "Edit Data" di kanan atas. Tombol itu membuka
+ * modal pengelolaan (cari, tambah, edit, hapus) — jadi halaman utama tetap
+ * ringkas tanpa daftar aksi memanjang ke bawah.
+ * Dipakai berulang oleh semua modul (Pegawai, Perka, Administrasi, dst)
+ * supaya tidak duplikasi kode.
  */
-function mountCrudPanel(containerId, entityKey) {
+function mountCrudSection(containerId, entityKey, sectionTitle) {
   const cfg = ENTITY_CONFIG[entityKey];
   const container = document.getElementById(containerId);
+  const title = sectionTitle || cfg.label;
   let allData = [];
   let editingId = null;
   let pendingFileUrl = '';
   let pendingFileId = '';
 
   container.innerHTML = `
-    <div class="toolbar">
-      <input type="search" placeholder="Cari ${cfg.labelSingular.toLowerCase()}..." data-role="search">
-      <button class="btn btn-primary" data-role="add">+ Tambah ${cfg.labelSingular}</button>
+    <div class="section">
+      <div class="section-head">
+        <h3>${title}</h3>
+        <button class="btn btn-primary btn-sm" data-role="open-manage">Edit Data</button>
+      </div>
+      <div class="card-panel">
+        <table>
+          <thead><tr>${cfg.tableColumns.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
+          <tbody data-role="view-tbody"><tr><td colspan="${cfg.tableColumns.length}" class="loading-text">Memuat data...</td></tr></tbody>
+        </table>
+      </div>
     </div>
-    <div class="card-panel">
-      <table>
-        <thead><tr>${cfg.tableColumns.map(c => `<th>${c.label}</th>`).join('')}<th></th></tr></thead>
-        <tbody data-role="tbody"><tr><td colspan="${cfg.tableColumns.length + 1}" class="loading-text">Memuat data...</td></tr></tbody>
-      </table>
+
+    <div class="modal-backdrop manage-backdrop" data-role="manage-backdrop">
+      <div class="modal manage-modal">
+        <div class="modal-head">
+          <h3>Kelola ${title}</h3>
+          <button class="modal-close" data-role="manage-close" aria-label="Tutup">&times;</button>
+        </div>
+        <div class="toolbar">
+          <input type="search" placeholder="Cari ${cfg.labelSingular.toLowerCase()}..." data-role="search">
+          <button class="btn btn-primary" data-role="add">+ Tambah ${cfg.labelSingular}</button>
+        </div>
+        <div class="card-panel">
+          <table>
+            <thead><tr>${cfg.tableColumns.map(c => `<th>${c.label}</th>`).join('')}<th></th></tr></thead>
+            <tbody data-role="manage-tbody"><tr><td colspan="${cfg.tableColumns.length + 1}" class="loading-text">Memuat data...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <div class="modal-backdrop" data-role="modal-backdrop">
@@ -44,7 +69,9 @@ function mountCrudPanel(containerId, entityKey) {
     </div>
   `;
 
-  const tbody = container.querySelector('[data-role="tbody"]');
+  const viewTbody = container.querySelector('[data-role="view-tbody"]');
+  const tbody = container.querySelector('[data-role="manage-tbody"]');
+  const manageBackdrop = container.querySelector('[data-role="manage-backdrop"]');
   const modalBackdrop = container.querySelector('[data-role="modal-backdrop"]');
   const modalError = container.querySelector('[data-role="modal-error"]');
   const modalTitle = container.querySelector('[data-role="modal-title"]');
@@ -65,14 +92,19 @@ function mountCrudPanel(containerId, entityKey) {
   function getFieldEl(key) { return form.querySelector(`[data-field="${key}"]`); }
 
   async function load() {
-    tbody.innerHTML = `<tr><td colspan="${cfg.tableColumns.length + 1}" class="loading-text">Memuat data...</td></tr>`;
+    const loadingRowManage = `<tr><td colspan="${cfg.tableColumns.length + 1}" class="loading-text">Memuat data...</td></tr>`;
+    const loadingRowView = `<tr><td colspan="${cfg.tableColumns.length}" class="loading-text">Memuat data...</td></tr>`;
+    tbody.innerHTML = loadingRowManage;
+    viewTbody.innerHTML = loadingRowView;
     const result = await API.list(entityKey);
     if (!result.ok) {
       tbody.innerHTML = `<tr><td colspan="${cfg.tableColumns.length + 1}" class="loading-text">Gagal memuat: ${escapeHtml(result.error)}</td></tr>`;
+      viewTbody.innerHTML = `<tr><td colspan="${cfg.tableColumns.length}" class="loading-text">Gagal memuat: ${escapeHtml(result.error)}</td></tr>`;
       return;
     }
     allData = result.data;
     renderRows(allData);
+    renderViewRows(allData);
   }
 
   function renderRows(list) {
@@ -94,6 +126,14 @@ function mountCrudPanel(containerId, entityKey) {
 
     tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => openEdit(btn.dataset.edit)));
     tbody.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', () => handleDelete(btn.dataset.delete)));
+  }
+
+  function renderViewRows(list) {
+    if (list.length === 0) {
+      viewTbody.innerHTML = `<tr><td colspan="${cfg.tableColumns.length}"><div class="empty-state">Belum ada data. Klik "Edit Data" untuk mulai.</div></td></tr>`;
+      return;
+    }
+    viewTbody.innerHTML = list.map(row => `<tr>${cfg.tableColumns.map(c => renderCell(c, row)).join('')}</tr>`).join('');
   }
 
   function renderCell(c, row) {
@@ -137,6 +177,8 @@ function mountCrudPanel(containerId, entityKey) {
   }
 
   function closeModal() { modalBackdrop.classList.remove('show'); }
+  function openManage() { manageBackdrop.classList.add('show'); }
+  function closeManage() { manageBackdrop.classList.remove('show'); }
 
   async function handleDelete(id) {
     const row = allData.find(r => r.id === id);
@@ -146,6 +188,10 @@ function mountCrudPanel(containerId, entityKey) {
     if (!result.ok) { alert('Gagal menghapus: ' + result.error); return; }
     await load();
   }
+
+  container.querySelector('[data-role="open-manage"]').addEventListener('click', openManage);
+  container.querySelector('[data-role="manage-close"]').addEventListener('click', closeManage);
+  manageBackdrop.addEventListener('click', (e) => { if (e.target === manageBackdrop) closeManage(); });
 
   container.querySelector('[data-role="add"]').addEventListener('click', openAdd);
   container.querySelector('[data-role="cancel"]').addEventListener('click', closeModal);
