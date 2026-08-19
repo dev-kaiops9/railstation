@@ -13,7 +13,7 @@ function renderSidebar(activePage) {
       </div>
       <nav>${menuHtml}</nav>
       <div class="bottom">
-        <button id="logoutBtn"><span class="icon">&#8630;</span><span class="label-text">Keluar</span></button>
+        <button id="logoutBtn"><span class="icon">${ICON.logout}</span><span class="label-text">Keluar</span></button>
       </div>
     </aside>
   `;
@@ -49,6 +49,12 @@ async function initPage(activePage, title, sub) {
   // halaman, karena sidebar tidak lagi menunggu jaringan sebelum muncul.
   document.getElementById('sidebarMount').innerHTML = renderSidebar(activePage);
   document.getElementById('topbarMount').innerHTML = renderTopbar(title, sub);
+
+  // Isi semua placeholder ikon flat SVG (span dengan atribut data-icon="namaIkon")
+  document.querySelectorAll('[data-icon]').forEach(el => {
+    const svg = ICON[el.dataset.icon];
+    if (svg) el.innerHTML = svg;
+  });
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await API.logout();

@@ -17,10 +17,10 @@
     <div id="topbarMount"></div>
 
     <div class="stat-grid" id="statGrid">
-      <div class="stat-card"><div class="icon-badge green">&#9787;</div><div><div class="label">Pegawai Aktif</div><div class="value" id="statPegawai">—</div></div></div>
-      <div class="stat-card"><div class="icon-badge blue">&#8594;</div><div><div class="label">Perjalanan Hari Ini</div><div class="value" id="statPerka">—</div></div></div>
-      <div class="stat-card"><div class="icon-badge orange">&#9873;</div><div><div class="label">Gangguan Aktif</div><div class="value" id="statGangguan">—</div></div></div>
-      <div class="stat-card"><div class="icon-badge purple">&#9925;</div><div><div class="label">Estimasi Cuaca</div><div class="value" id="statCuaca">Cerah</div></div></div>
+      <div class="stat-card"><div class="icon-badge green" id="iconPegawai"></div><div><div class="label">Pegawai Aktif</div><div class="value" id="statPegawai">—</div></div></div>
+      <div class="stat-card"><div class="icon-badge blue" id="iconPerka"></div><div><div class="label">Perjalanan Hari Ini</div><div class="value" id="statPerka">—</div></div></div>
+      <div class="stat-card"><div class="icon-badge orange" id="iconGangguan"></div><div><div class="label">Gangguan Aktif</div><div class="value" id="statGangguan">—</div></div></div>
+      <div class="stat-card"><div class="icon-badge purple" id="iconCuaca"></div><div><div class="label">Estimasi Cuaca</div><div class="value" id="statCuaca">Cerah</div></div></div>
     </div>
 
     <div class="panel-grid">
@@ -49,6 +49,11 @@
 (async () => {
   const session = await initPage('dashboard', 'Dashboard', `Selamat datang kembali, ${API.getUserInfo().nama || ''}`);
   if (!session) return;
+
+  document.getElementById('iconPegawai').innerHTML = ICON.users;
+  document.getElementById('iconPerka').innerHTML = ICON.train;
+  document.getElementById('iconGangguan').innerHTML = ICON.alertTriangle;
+  document.getElementById('iconCuaca').innerHTML = ICON.cloudSun;
 
   const statsRes = await API.dashboardStats();
   if (statsRes.ok) {
