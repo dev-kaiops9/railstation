@@ -201,6 +201,20 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .info-row .k { color: var(--text-muted); flex-shrink: 0; }
 .info-row .v { font-weight: 600; text-align: right; word-break: break-word; }
 
+/* ============ COMPACT CARD (entitas CRUD ditampilkan sebagai card, cth. Fasilitas) ============ */
+.compact-card { padding: 18px 20px; display: flex; flex-direction: column; }
+.compact-card-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.compact-card-head h4 { padding-bottom: 0; margin-bottom: 0; border-bottom: none; }
+.btn-link { background: none; border: none; color: var(--primary); font-family: var(--font); font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 4px 2px; }
+.btn-link:hover { text-decoration: underline; }
+.mini-list { display: flex; flex-direction: column; max-height: 260px; overflow-y: auto; }
+.mini-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.mini-item:last-child { border-bottom: none; }
+.mini-item-main { font-weight: 600; word-break: break-word; }
+.mini-item-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.mini-item-sub { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.mini-empty { color: var(--text-muted); font-size: 12.5px; padding: 10px 0; }
+
 /* ============ MANAGE MODAL (dibuka lewat tombol "Edit Data") ============ */
 .manage-backdrop { z-index: 40; }
 .manage-modal { max-width: 920px; }

@@ -87,11 +87,11 @@ const ENTITY_CONFIG = {
     ],
   },
   fasilitas: {
-    label: 'Fasilitas & Layanan', labelSingular: 'Fasilitas',
+    label: 'Fasilitas & Layanan Stasiun', labelSingular: 'Fasilitas',
     searchKeys: ['nama', 'kategori', 'lokasi'],
     tableColumns: [
       { key: 'nama', label: 'Nama Fasilitas' },
-      { key: 'kategori', label: 'Kategori' },
+      { key: 'kategori', label: 'Kategori', isBadge: true },
       { key: 'lokasi', label: 'Lokasi' },
       { key: 'keterangan', label: 'Keterangan' },
     ],
@@ -101,6 +101,26 @@ const ENTITY_CONFIG = {
       { key: 'lokasi', label: 'Lokasi', type: 'text' },
       { key: 'keterangan', label: 'Keterangan', type: 'text' },
     ],
+    compact: { primary: 'nama', badge: 'kategori', sub: 'lokasi' },
+  },
+  fasilitasUmum: {
+    label: 'Fasilitas Umum Terdekat', labelSingular: 'Fasilitas Umum',
+    searchKeys: ['nama', 'kategori', 'alamat'],
+    tableColumns: [
+      { key: 'nama', label: 'Nama' },
+      { key: 'kategori', label: 'Kategori', isBadge: true },
+      { key: 'jarak', label: 'Jarak' },
+      { key: 'alamat', label: 'Alamat' },
+      { key: 'keterangan', label: 'Keterangan' },
+    ],
+    fields: [
+      { key: 'nama', label: 'Nama Fasilitas', type: 'text', required: true },
+      { key: 'kategori', label: 'Kategori', type: 'select', options: ['ATM/Bank', 'SPBU', 'Rumah Sakit/Klinik', 'Minimarket', 'Kuliner', 'Masjid/Mushola', 'Penginapan', 'Lainnya'] },
+      { key: 'jarak', label: 'Jarak dari Stasiun', type: 'text' },
+      { key: 'alamat', label: 'Alamat', type: 'text' },
+      { key: 'keterangan', label: 'Keterangan', type: 'text' },
+    ],
+    compact: { primary: 'nama', badge: 'kategori', sub: 'jarak' },
   },
   jadwalKA: {
     label: 'Jadwal KA Berhenti', labelSingular: 'Jadwal KA',
@@ -253,6 +273,9 @@ const BADGE_COLOR_MAP = {
   Pagi: 'blue', Siang: 'orange', Malam: 'purple', Libur: 'green',
   PTP: 'blue', BH: 'purple', BK: 'orange', MS: 'green', KR: 'blue', SI: 'purple',
   Aturan: 'blue', Panduan: 'purple', 'Referensi Operasional': 'orange',
+  'Layanan Penumpang': 'blue', Keamanan: 'red', Kebersihan: 'green', Teknis: 'orange',
+  'ATM/Bank': 'blue', SPBU: 'orange', 'Rumah Sakit/Klinik': 'red', Minimarket: 'green',
+  Kuliner: 'purple', 'Masjid/Mushola': 'blue', Penginapan: 'purple',
 };
 function badgeColor(value) {
   return BADGE_COLOR_MAP[value] || 'blue';

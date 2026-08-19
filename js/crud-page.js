@@ -7,16 +7,25 @@
  * Dipakai berulang oleh semua modul (Pegawai, Perka, Administrasi, dst)
  * supaya tidak duplikasi kode.
  */
-function mountCrudSection(containerId, entityKey, sectionTitle) {
+function mountCrudSection(containerId, entityKey, sectionTitle, opts = {}) {
   const cfg = ENTITY_CONFIG[entityKey];
   const container = document.getElementById(containerId);
   const title = sectionTitle || cfg.label;
+  const compact = !!opts.compact;
   let allData = [];
   let editingId = null;
   let pendingFileUrl = '';
   let pendingFileId = '';
 
-  container.innerHTML = `
+  const viewHtml = compact ? `
+    <div class="info-card compact-card">
+      <div class="compact-card-head">
+        <h4>${title}</h4>
+        <button class="btn-link" data-role="open-manage">Kelola</button>
+      </div>
+      <div class="mini-list" data-role="view-list"><div class="mini-empty">Memuat data...</div></div>
+    </div>
+  ` : `
     <div class="section">
       <div class="section-head">
         <h3>${title}</h3>
@@ -29,7 +38,9 @@ function mountCrudSection(containerId, entityKey, sectionTitle) {
         </table>
       </div>
     </div>
+  `;
 
+  container.innerHTML = viewHtml + `
     <div class="modal-backdrop manage-backdrop" data-role="manage-backdrop">
       <div class="modal manage-modal">
         <div class="modal-head">
@@ -70,6 +81,7 @@ function mountCrudSection(containerId, entityKey, sectionTitle) {
   `;
 
   const viewTbody = container.querySelector('[data-role="view-tbody"]');
+  const viewList = container.querySelector('[data-role="view-list"]');
   const tbody = container.querySelector('[data-role="manage-tbody"]');
   const manageBackdrop = container.querySelector('[data-role="manage-backdrop"]');
   const modalBackdrop = container.querySelector('[data-role="modal-backdrop"]');
@@ -93,18 +105,21 @@ function mountCrudSection(containerId, entityKey, sectionTitle) {
 
   async function load() {
     const loadingRowManage = `<tr><td colspan="${cfg.tableColumns.length + 1}" class="loading-text">Memuat data...</td></tr>`;
-    const loadingRowView = `<tr><td colspan="${cfg.tableColumns.length}" class="loading-text">Memuat data...</td></tr>`;
     tbody.innerHTML = loadingRowManage;
-    viewTbody.innerHTML = loadingRowView;
+    if (compact) viewList.innerHTML = `<div class="mini-empty">Memuat data...</div>`;
+    else viewTbody.innerHTML = `<tr><td colspan="${cfg.tableColumns.length}" class="loading-text">Memuat data...</td></tr>`;
+
     const result = await API.list(entityKey);
     if (!result.ok) {
       tbody.innerHTML = `<tr><td colspan="${cfg.tableColumns.length + 1}" class="loading-text">Gagal memuat: ${escapeHtml(result.error)}</td></tr>`;
-      viewTbody.innerHTML = `<tr><td colspan="${cfg.tableColumns.length}" class="loading-text">Gagal memuat: ${escapeHtml(result.error)}</td></tr>`;
+      if (compact) viewList.innerHTML = `<div class="mini-empty">Gagal memuat: ${escapeHtml(result.error)}</div>`;
+      else viewTbody.innerHTML = `<tr><td colspan="${cfg.tableColumns.length}" class="loading-text">Gagal memuat: ${escapeHtml(result.error)}</td></tr>`;
       return;
     }
     allData = result.data;
     renderRows(allData);
-    renderViewRows(allData);
+    if (compact) renderViewList(allData);
+    else renderViewRows(allData);
   }
 
   function renderRows(list) {
@@ -134,6 +149,28 @@ function mountCrudSection(containerId, entityKey, sectionTitle) {
       return;
     }
     viewTbody.innerHTML = list.map(row => `<tr>${cfg.tableColumns.map(c => renderCell(c, row)).join('')}</tr>`).join('');
+  }
+
+  function renderViewList(list) {
+    if (list.length === 0) {
+      viewList.innerHTML = `<div class="mini-empty">Belum ada data. Klik "Kelola" untuk mulai.</div>`;
+      return;
+    }
+    const c = cfg.compact || {};
+    viewList.innerHTML = list.map(row => {
+      const primary = escapeHtml(formatCellValue(row[c.primary]));
+      const badgeVal = c.badge ? row[c.badge] : null;
+      const subVal = c.sub ? formatCellValue(row[c.sub]) : '';
+      return `
+        <div class="mini-item">
+          <span class="mini-item-main">${primary}</span>
+          <span class="mini-item-meta">
+            ${badgeVal ? `<span class="badge badge-${badgeColor(badgeVal)}">${escapeHtml(badgeVal)}</span>` : ''}
+            ${subVal ? `<span class="mini-item-sub">${escapeHtml(subVal)}</span>` : ''}
+          </span>
+        </div>
+      `;
+    }).join('');
   }
 
   function renderCell(c, row) {
