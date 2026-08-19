@@ -216,6 +216,33 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .mini-item-sub { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
 .mini-empty { color: var(--text-muted); font-size: 12.5px; padding: 10px 0; }
 
+/* ============ INLINE EDIT (edit langsung di card, tanpa modal) ============ */
+.inline-input, .inline-select {
+  font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text);
+  border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 9px; width: 100%; text-align: right;
+}
+.inline-input:focus, .inline-select:focus { outline: none; border-color: var(--primary); }
+.edit-list { display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; padding-top: 2px; }
+.edit-row {
+  display: flex; align-items: flex-start; gap: 8px; background: #FAFAFD; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 10px 10px 12px;
+}
+.edit-row-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; flex: 1; }
+.edit-field { display: flex; flex-direction: column; gap: 3px; }
+.edit-field label { font-size: 10.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.edit-field input, .edit-field select {
+  font-family: var(--font); font-size: 12.5px; border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 6px 8px; width: 100%; background: #fff;
+}
+.edit-field input:focus, .edit-field select:focus { outline: none; border-color: var(--primary); }
+.edit-row-remove {
+  background: none; border: none; color: var(--text-soft); font-size: 18px; line-height: 1; cursor: pointer;
+  padding: 4px 6px; flex-shrink: 0; margin-top: 14px;
+}
+.edit-row-remove:hover { color: var(--red); }
+.add-row-btn { margin-top: 10px; text-align: left; }
+.section-head-actions { display: flex; align-items: center; gap: 8px; }
+
 /* ============ MANAGE MODAL (dibuka lewat tombol "Edit Data") ============ */
 .manage-backdrop { z-index: 40; }
 .manage-modal { max-width: 920px; }

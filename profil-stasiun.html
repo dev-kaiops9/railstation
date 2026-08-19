@@ -31,7 +31,11 @@
       <div class="section">
         <div class="section-head">
           <h3>Identitas Stasiun</h3>
-          <button class="btn btn-primary btn-sm" id="openProfilManage">Edit Data</button>
+          <div class="section-head-actions">
+            <div class="error-msg" id="profilError" style="margin:0;"></div>
+            <button class="btn btn-secondary btn-sm" id="cancelEditBtn" style="display:none;">Batal</button>
+            <button class="btn btn-primary btn-sm" id="editDataBtn">Edit Data</button>
+          </div>
         </div>
         <div class="info-cards">
           <div class="info-card">
@@ -55,33 +59,6 @@
       </div>
     </div>
 
-    <div class="modal-backdrop manage-backdrop" id="profilManageBackdrop">
-      <div class="modal">
-        <div class="modal-head">
-          <h3>Edit Identitas Stasiun</h3>
-          <button class="modal-close" id="profilManageClose" aria-label="Tutup">&times;</button>
-        </div>
-        <div class="error-msg" id="profilError"></div>
-        <form id="profilForm">
-          <div class="grid-2">
-            <div class="field"><label>Nama Stasiun</label><input type="text" id="p_nama"></div>
-            <div class="field"><label>Singkatan</label><input type="text" id="p_singkatan"></div>
-            <div class="field"><label>Kelas Stasiun</label><input type="text" id="p_kelas"></div>
-            <div class="field"><label>Kode Stasiun</label><input type="text" id="p_kode"></div>
-            <div class="field"><label>Waktu Operasional</label><input type="text" id="p_waktuOperasional" placeholder="cth. 05:00 - 23:00"></div>
-            <div class="field"><label>KM (Kilometer Jalur)</label><input type="text" id="p_km"></div>
-            <div class="field"><label>Ketinggian (mdpl)</label><input type="text" id="p_ketinggian"></div>
-            <div class="field"><label>Wilayah</label><input type="text" id="p_wilayah"></div>
-          </div>
-          <div class="field"><label>Alamat</label><input type="text" id="p_alamat"></div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" id="profilCancelBtn">Batal</button>
-            <button type="submit" class="btn btn-primary" id="profilSaveBtn">Simpan Profil</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
     <div class="tab-panel" id="tabJadwalKA"><div id="jadwalKAPanel"></div></div>
   </main>
 </div>
@@ -96,12 +73,17 @@
   if (!session) return;
 
   initTabs('tabs');
-  mountCrudSection('fasilitasCard', 'fasilitas', 'Fasilitas & Layanan Stasiun', { compact: true });
-  mountCrudSection('fasilitasUmumCard', 'fasilitasUmum', 'Fasilitas Umum Terdekat', { compact: true });
+  const fasilitasCard = mountInlineCard('fasilitasCard', 'fasilitas', 'Fasilitas & Layanan Stasiun');
+  const fasilitasUmumCard = mountInlineCard('fasilitasUmumCard', 'fasilitasUmum', 'Fasilitas Umum Terdekat');
   mountCrudSection('jadwalKAPanel', 'jadwalKA', 'Kereta Api yang Berhenti');
 
   const profilKeys = ['nama','singkatan','kelas','kode','waktuOperasional','km','ketinggian','alamat','wilayah'];
-  const profilManageBackdrop = document.getElementById('profilManageBackdrop');
+  let profilData = {};
+  let isEditing = false;
+
+  const editDataBtn = document.getElementById('editDataBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  const errEl = document.getElementById('profilError');
 
   function renderProfilView(p) {
     profilKeys.forEach(k => {
@@ -110,48 +92,71 @@
     });
   }
 
-  // Muat profil singleton
-  const res = await API.getProfil();
-  if (res.ok) {
-    const p = res.data;
-    renderProfilView(p);
+  function renderProfilEdit(p) {
     profilKeys.forEach(k => {
-      const el = document.getElementById('p_' + k);
-      if (el) el.value = p[k] || '';
+      const el = document.getElementById('v_' + k);
+      if (el) el.innerHTML = `<input type="text" class="inline-input" data-profil-key="${k}" value="${escapeAttr(p[k] || '')}">`;
     });
   }
 
-  document.getElementById('openProfilManage').addEventListener('click', () => profilManageBackdrop.classList.add('show'));
-  document.getElementById('profilManageClose').addEventListener('click', () => profilManageBackdrop.classList.remove('show'));
-  document.getElementById('profilCancelBtn').addEventListener('click', () => profilManageBackdrop.classList.remove('show'));
-  profilManageBackdrop.addEventListener('click', (e) => { if (e.target === profilManageBackdrop) profilManageBackdrop.classList.remove('show'); });
-
-  document.getElementById('profilForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('profilSaveBtn');
-    const errEl = document.getElementById('profilError');
-    errEl.classList.remove('show');
-    btn.disabled = true; btn.textContent = 'Menyimpan...';
+  function collectProfilEdit() {
     const data = {};
     profilKeys.forEach(k => {
-      data[k] = document.getElementById('p_' + k).value.trim();
+      const input = document.querySelector(`[data-profil-key="${k}"]`);
+      data[k] = input ? input.value.trim() : '';
     });
+    return data;
+  }
+
+  // Muat profil singleton
+  const res = await API.getProfil();
+  if (res.ok) {
+    profilData = res.data;
+    renderProfilView(profilData);
+  }
+
+  function setEditingUI(editing) {
+    isEditing = editing;
+    editDataBtn.textContent = editing ? 'Simpan' : 'Edit Data';
+    cancelEditBtn.style.display = editing ? 'inline-flex' : 'none';
+    errEl.classList.remove('show');
+  }
+
+  editDataBtn.addEventListener('click', async () => {
+    if (!isEditing) {
+      renderProfilEdit(profilData);
+      fasilitasCard.enterEdit();
+      fasilitasUmumCard.enterEdit();
+      setEditingUI(true);
+      return;
+    }
+
+    // Mode simpan
+    editDataBtn.disabled = true;
+    editDataBtn.textContent = 'Menyimpan...';
+    errEl.classList.remove('show');
     try {
-      const result = await API.saveProfil(data);
+      const newProfil = collectProfilEdit();
+      const result = await API.saveProfil(newProfil);
       if (!result.ok) throw new Error(result.error);
-      renderProfilView(data);
-      btn.textContent = 'Tersimpan ✓';
-      setTimeout(() => {
-        btn.textContent = 'Simpan Profil';
-        profilManageBackdrop.classList.remove('show');
-      }, 700);
+      profilData = newProfil;
+      await Promise.all([fasilitasCard.save(), fasilitasUmumCard.save()]);
+      renderProfilView(profilData);
+      setEditingUI(false);
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.add('show');
-      btn.textContent = 'Simpan Profil';
+      editDataBtn.textContent = 'Simpan';
     } finally {
-      btn.disabled = false;
+      editDataBtn.disabled = false;
     }
+  });
+
+  cancelEditBtn.addEventListener('click', () => {
+    renderProfilView(profilData);
+    fasilitasCard.exitEdit();
+    fasilitasUmumCard.exitEdit();
+    setEditingUI(false);
   });
 })();
 </script>

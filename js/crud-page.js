@@ -301,10 +301,164 @@ function mountCrudSection(containerId, entityKey, sectionTitle, opts = {}) {
   load();
 }
 
+/**
+ * Kartu entitas dengan mode edit inline (tanpa modal). Dipakai untuk kartu
+ * yang diedit bersamaan lewat satu tombol "Edit Data" di level halaman
+ * (lihat profil-stasiun.html). Kartu ini TIDAK punya tombol sendiri —
+ * dikontrol dari luar lewat objek yang dikembalikan: { enterEdit, exitEdit, save, reload }.
+ * - enterEdit(): tampilkan baris-baris sebagai form (bisa diketik langsung di kartu).
+ * - exitEdit(): batal, kembali ke tampilan baca tanpa menyimpan.
+ * - save(): kirim semua perubahan (tambah/ubah/hapus baris) ke server, lalu reload.
+ */
+function mountInlineCard(containerId, entityKey, title) {
+  const cfg = ENTITY_CONFIG[entityKey];
+  const container = document.getElementById(containerId);
+  let allData = [];     // data tersimpan di server (hasil load terakhir)
+  let workingRows = []; // salinan yang sedang diedit di kartu
+
+  container.innerHTML = `
+    <div class="info-card compact-card">
+      <div class="compact-card-head">
+        <h4>${title}</h4>
+      </div>
+      <div class="mini-list" data-role="view-list"><div class="mini-empty">Memuat data...</div></div>
+      <div class="edit-list" data-role="edit-list" style="display:none;"></div>
+      <button type="button" class="btn-link add-row-btn" data-role="add-row" style="display:none;">+ Tambah Baris</button>
+    </div>
+  `;
+
+  const viewList = container.querySelector('[data-role="view-list"]');
+  const editList = container.querySelector('[data-role="edit-list"]');
+  const addRowBtn = container.querySelector('[data-role="add-row"]');
+
+  async function load() {
+    viewList.innerHTML = `<div class="mini-empty">Memuat data...</div>`;
+    const result = await API.list(entityKey);
+    if (!result.ok) {
+      allData = [];
+      viewList.innerHTML = `<div class="mini-empty">Gagal memuat: ${escapeHtml(result.error)}</div>`;
+      return;
+    }
+    allData = result.data;
+    renderView();
+  }
+
+  function renderView() {
+    if (allData.length === 0) {
+      viewList.innerHTML = `<div class="mini-empty">Belum ada data.</div>`;
+      return;
+    }
+    const c = cfg.compact || {};
+    viewList.innerHTML = allData.map(row => {
+      const primary = escapeHtml(formatCellValue(row[c.primary]));
+      const badgeVal = c.badge ? row[c.badge] : null;
+      const subVal = c.sub ? formatCellValue(row[c.sub]) : '';
+      return `
+        <div class="mini-item">
+          <span class="mini-item-main">${primary}</span>
+          <span class="mini-item-meta">
+            ${badgeVal ? `<span class="badge badge-${badgeColor(badgeVal)}">${escapeHtml(badgeVal)}</span>` : ''}
+            ${subVal ? `<span class="mini-item-sub">${escapeHtml(subVal)}</span>` : ''}
+          </span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderEditField(f, row, idx) {
+    const id = `ef_${entityKey}_${idx}_${f.key}`;
+    const val = row[f.key] !== undefined && row[f.key] !== null ? row[f.key] : '';
+    if (f.type === 'select') {
+      return `<div class="edit-field"><label for="${id}">${f.label}</label>
+        <select id="${id}" data-idx="${idx}" data-field="${f.key}">
+          ${f.options.map(o => `<option value="${o}" ${o === val ? 'selected' : ''}>${o}</option>`).join('')}
+        </select></div>`;
+    }
+    const type = f.type === 'time' ? 'time' : f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text';
+    const inputVal = f.type === 'date' ? formatDateForInput(val) : val;
+    return `<div class="edit-field"><label for="${id}">${f.label}</label>
+      <input type="${type}" id="${id}" data-idx="${idx}" data-field="${f.key}" value="${escapeAttr(inputVal)}"></div>`;
+  }
+
+  function renderEditList() {
+    if (workingRows.length === 0) {
+      editList.innerHTML = `<div class="mini-empty">Belum ada data. Klik "+ Tambah Baris" untuk mulai.</div>`;
+      return;
+    }
+    editList.innerHTML = workingRows.map((row, idx) => `
+      <div class="edit-row" data-idx="${idx}">
+        <div class="edit-row-fields">${cfg.fields.map(f => renderEditField(f, row, idx)).join('')}</div>
+        <button type="button" class="edit-row-remove" data-remove="${idx}" title="Hapus baris ini">&times;</button>
+      </div>
+    `).join('');
+
+    editList.querySelectorAll('[data-field]').forEach(el => {
+      const handler = (e) => {
+        const idx = +e.target.dataset.idx;
+        const field = e.target.dataset.field;
+        workingRows[idx][field] = e.target.value;
+      };
+      el.addEventListener('input', handler);
+      el.addEventListener('change', handler);
+    });
+    editList.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        workingRows.splice(+btn.dataset.remove, 1);
+        renderEditList();
+      });
+    });
+  }
+
+  addRowBtn.addEventListener('click', () => {
+    const emptyRow = {};
+    cfg.fields.forEach(f => { emptyRow[f.key] = f.type === 'select' ? f.options[0] : ''; });
+    workingRows.push(emptyRow);
+    renderEditList();
+  });
+
+  function enterEdit() {
+    workingRows = allData.map(r => ({ ...r }));
+    viewList.style.display = 'none';
+    editList.style.display = 'block';
+    addRowBtn.style.display = 'inline-block';
+    renderEditList();
+  }
+
+  function exitEdit() {
+    viewList.style.display = 'block';
+    editList.style.display = 'none';
+    addRowBtn.style.display = 'none';
+  }
+
+  async function save() {
+    const workingIds = new Set(workingRows.filter(r => r.id).map(r => r.id));
+    const toDelete = allData.filter(r => !workingIds.has(r.id));
+    for (const row of toDelete) {
+      await API.remove(entityKey, row.id);
+    }
+    for (const row of workingRows) {
+      const data = {};
+      cfg.fields.forEach(f => { data[f.key] = (row[f.key] === undefined || row[f.key] === null) ? '' : row[f.key].toString().trim(); });
+      if (row.id) await API.update(entityKey, row.id, data);
+      else await API.create(entityKey, data);
+    }
+    await load();
+    exitEdit();
+  }
+
+  load();
+
+  return { enterEdit, exitEdit, save, reload: load };
+}
+
 // ---------- Helpers ----------
 function escapeHtml(str) {
   if (str === undefined || str === null) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function escapeAttr(str) {
+  if (str === undefined || str === null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 function formatCellValue(val) {
   if (val === undefined || val === null) return '';
