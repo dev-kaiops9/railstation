@@ -17,9 +17,9 @@
     <div id="topbarMount"></div>
 
     <div class="tabs" id="tabs">
-      <button class="tab-btn active" data-target="tabDirektori">
+      <button class="tab-btn active" data-target="tabPegawai">
         <span class="tab-icon" data-icon="users"></span>
-        <span class="tab-copy"><span class="tab-title">Direktori Pegawai</span><span class="tab-desc">Data dan kontak pegawai stasiun</span></span>
+        <span class="tab-copy"><span class="tab-title">Pegawai</span><span class="tab-desc">Data pegawai stasiun</span></span>
       </button>
       <button class="tab-btn" data-target="tabJadwal">
         <span class="tab-icon" data-icon="clock"></span>
@@ -29,11 +29,68 @@
         <span class="tab-icon" data-icon="award"></span>
         <span class="tab-copy"><span class="tab-title">Sertifikasi &amp; Kecakapan</span><span class="tab-desc">Sertifikat dan kompetensi pegawai</span></span>
       </button>
+      <button class="tab-btn" data-target="tabIJK">
+        <span class="tab-icon" data-icon="clipboard"></span>
+        <span class="tab-copy"><span class="tab-title">IJK &amp; Kebutuhan Pegawai</span><span class="tab-desc">Ikhtisar jam kerja dan kebutuhan pegawai</span></span>
+      </button>
     </div>
 
-    <div class="tab-panel active" id="tabDirektori"><div id="pegawaiPanel"></div></div>
-    <div class="tab-panel" id="tabJadwal"><div id="jadwalDinasPanel"></div></div>
-    <div class="tab-panel" id="tabSertifikasi"><div id="sertifikasiPanel"></div></div>
+    <div class="tab-panel active" id="tabPegawai">
+      <div class="section">
+        <div class="section-head">
+          <h3>Data Pegawai</h3>
+          <div class="section-head-actions">
+            <div class="error-msg" id="errPegawai" style="margin:0;"></div>
+            <button class="btn btn-secondary btn-sm" id="cancelPegawai" style="display:none;">Batal</button>
+            <button class="btn btn-primary btn-sm" id="editPegawai">Edit Data</button>
+          </div>
+        </div>
+        <div id="pegawaiCard"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tabJadwal">
+      <div class="section-head" style="margin-bottom:14px;">
+        <h3 style="visibility:hidden;">.</h3>
+        <div class="section-head-actions">
+          <div class="error-msg" id="errJadwal" style="margin:0;"></div>
+          <button class="btn btn-secondary btn-sm" id="cancelJadwal" style="display:none;">Batal</button>
+          <button class="btn btn-primary btn-sm" id="editJadwal">Edit Data</button>
+        </div>
+      </div>
+      <div id="jadwalMatrixMount"></div>
+      <div id="keteranganDinasanCard"></div>
+    </div>
+
+    <div class="tab-panel" id="tabSertifikasi">
+      <div class="section-head" style="margin-bottom:14px;">
+        <h3>Sertifikasi &amp; Kecakapan</h3>
+        <div class="section-head-actions">
+          <div class="error-msg" id="errSertifikasi" style="margin:0;"></div>
+          <button class="btn btn-secondary btn-sm" id="cancelSertifikasi" style="display:none;">Batal</button>
+          <button class="btn btn-primary btn-sm" id="editSertifikasi">Edit Data</button>
+        </div>
+      </div>
+      <div class="info-cards">
+        <div id="kecakapanCard"></div>
+        <div id="sertifikasiCard"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tabIJK">
+      <div class="section-head" style="margin-bottom:14px;">
+        <h3>IJK &amp; Kebutuhan Pegawai</h3>
+        <div class="section-head-actions">
+          <div class="error-msg" id="errIJK" style="margin:0;"></div>
+          <button class="btn btn-secondary btn-sm" id="cancelIJK" style="display:none;">Batal</button>
+          <button class="btn btn-primary btn-sm" id="editIJK">Edit Data</button>
+        </div>
+      </div>
+      <div class="info-cards">
+        <div id="kebutuhanCard"></div>
+        <div id="ijkCard"></div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -41,15 +98,32 @@
 <script src="js/entities.js"></script>
 <script src="js/sidebar.js"></script>
 <script src="js/crud-page.js"></script>
+<script src="js/jadwal-matrix.js"></script>
 <script>
 (async () => {
-  const session = await initPage('pegawai', 'Data Pegawai & Kepegawaian', 'Direktori pegawai, jadwal dinas, dan kompetensi.');
+  const session = await initPage('pegawai', 'Data Pegawai & Kepegawaian', 'Pegawai, jadwal dinas, dan kompetensi.');
   if (!session) return;
 
   initTabs('tabs');
-  mountCrudSection('pegawaiPanel', 'pegawai', 'Data Pegawai');
-  mountCrudSection('jadwalDinasPanel', 'jadwalDinas', 'Daftar Dinasan');
-  mountCrudSection('sertifikasiPanel', 'sertifikasi', 'Sertifikasi & Tanda Kecakapan');
+
+  // --- Tab: Pegawai ---
+  const pegawaiCard = mountInlineTableCard('pegawaiCard', 'pegawai', 'Data Pegawai', { variant: 'section' });
+  wireEditToggle('editPegawai', 'cancelPegawai', 'errPegawai', [pegawaiCard]);
+
+  // --- Tab: Jadwal Dinas ---
+  const jadwalMatrix = mountJadwalDinasMatrix('jadwalMatrixMount');
+  const keteranganCard = mountInlineTableCard('keteranganDinasanCard', 'keteranganDinasan', 'Keterangan Dinasan', { variant: 'section' });
+  wireEditToggle('editJadwal', 'cancelJadwal', 'errJadwal', [jadwalMatrix, keteranganCard]);
+
+  // --- Tab: Sertifikasi & Kecakapan ---
+  const kecakapanCard = mountInlineTableCard('kecakapanCard', 'kecakapan', 'Tanda Kecakapan', { variant: 'card' });
+  const sertifikasiCard = mountInlineTableCard('sertifikasiCard', 'sertifikasi', 'Sertifikasi', { variant: 'card' });
+  wireEditToggle('editSertifikasi', 'cancelSertifikasi', 'errSertifikasi', [kecakapanCard, sertifikasiCard]);
+
+  // --- Tab: IJK & Kebutuhan Pegawai ---
+  const kebutuhanCard = mountInlineTableCard('kebutuhanCard', 'kebutuhanPegawai', 'Kebutuhan Pegawai', { variant: 'card' });
+  const ijkCard = mountInlineTableCard('ijkCard', 'ijk', 'Ikhtisar Jam Kerja (IJK)', { variant: 'card' });
+  wireEditToggle('editIJK', 'cancelIJK', 'errIJK', [kebutuhanCard, ijkCard]);
 })();
 </script>
 </body>

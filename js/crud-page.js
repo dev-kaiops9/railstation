@@ -451,6 +451,212 @@ function mountInlineCard(containerId, entityKey, title) {
   return { enterEdit, exitEdit, save, reload: load };
 }
 
+/**
+ * Kartu entitas berbentuk TABEL (bukan mini-list) dengan mode edit inline.
+ * Sama seperti mountInlineCard, tapi tampilannya tabel penuh dengan kolom
+ * sesuai cfg.tableColumns (mode baca) dan cfg.fields (mode edit, per sel).
+ * Tidak punya tombol sendiri — dikontrol dari luar lewat wireEditToggle()
+ * atau langsung lewat objek yang dikembalikan: { enterEdit, exitEdit, save, reload }.
+ * opts.variant: 'card' (kartu kecil bertepi, default — untuk 2 kartu berdampingan)
+ *               atau 'section' (lebar penuh dengan judul h3 — untuk tabel utama).
+ */
+function mountInlineTableCard(containerId, entityKey, title, opts = {}) {
+  const cfg = ENTITY_CONFIG[entityKey];
+  const container = document.getElementById(containerId);
+  const variant = opts.variant || 'card';
+  const colCount = cfg.tableColumns.length;
+  let allData = [];
+  let workingRows = [];
+
+  const inner = `
+    <div data-role="view-wrap">
+      <table>
+        <thead><tr>${cfg.tableColumns.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
+        <tbody data-role="view-tbody"><tr><td colspan="${colCount}" class="loading-text">Memuat data...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="edit-table-wrap" data-role="edit-wrap" style="display:none;">
+      <table>
+        <thead><tr>${cfg.fields.map(f => `<th>${f.label}</th>`).join('')}<th></th></tr></thead>
+        <tbody data-role="edit-tbody"></tbody>
+      </table>
+      <button type="button" class="btn-link add-row-btn" data-role="add-row">+ Tambah Baris</button>
+    </div>
+  `;
+
+  container.innerHTML = variant === 'section' ? `
+    <div class="section">
+      <div class="section-head"><h3>${title}</h3></div>
+      <div class="card-panel">${inner}</div>
+    </div>
+  ` : `
+    <div class="info-card compact-card">
+      <div class="compact-card-head"><h4>${title}</h4></div>
+      ${inner}
+    </div>
+  `;
+
+  const viewWrap = container.querySelector('[data-role="view-wrap"]');
+  const viewTbody = container.querySelector('[data-role="view-tbody"]');
+  const editWrap = container.querySelector('[data-role="edit-wrap"]');
+  const editTbody = container.querySelector('[data-role="edit-tbody"]');
+  const addRowBtn = container.querySelector('[data-role="add-row"]');
+
+  function renderCellLocal(c, row) {
+    const val = row[c.key];
+    if (c.isPhoto) return `<td><img class="avatar" src="${row.fotoUrl || placeholderAvatar()}" alt=""></td>`;
+    if (c.isDate) return `<td>${escapeHtml(formatDateShort(val))}</td>`;
+    if (c.isBadge && val) return `<td><span class="badge badge-${badgeColor(val)}">${escapeHtml(val)}</span></td>`;
+    return `<td>${escapeHtml(formatCellValue(val))}</td>`;
+  }
+
+  async function load() {
+    viewTbody.innerHTML = `<tr><td colspan="${colCount}" class="loading-text">Memuat data...</td></tr>`;
+    const result = await API.list(entityKey);
+    if (!result.ok) {
+      allData = [];
+      viewTbody.innerHTML = `<tr><td colspan="${colCount}" class="loading-text">Gagal memuat: ${escapeHtml(result.error)}</td></tr>`;
+      return;
+    }
+    allData = result.data;
+    renderView();
+  }
+
+  function renderView() {
+    if (allData.length === 0) {
+      viewTbody.innerHTML = `<tr><td colspan="${colCount}"><div class="empty-state">Belum ada data.</div></td></tr>`;
+      return;
+    }
+    viewTbody.innerHTML = allData.map(row => `<tr>${cfg.tableColumns.map(c => renderCellLocal(c, row)).join('')}</tr>`).join('');
+  }
+
+  function renderEditCell(f, row, idx) {
+    const val = row[f.key] !== undefined && row[f.key] !== null ? row[f.key] : '';
+    const id = `it_${entityKey}_${idx}_${f.key}`;
+    if (f.type === 'select') {
+      return `<td><select id="${id}" data-idx="${idx}" data-field="${f.key}">
+        ${f.options.map(o => `<option value="${o}" ${o === val ? 'selected' : ''}>${o}</option>`).join('')}
+      </select></td>`;
+    }
+    const type = f.type === 'time' ? 'time' : f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text';
+    const inputVal = f.type === 'date' ? formatDateForInput(val) : val;
+    return `<td><input type="${type}" id="${id}" data-idx="${idx}" data-field="${f.key}" value="${escapeAttr(inputVal)}"></td>`;
+  }
+
+  function renderEditTable() {
+    if (workingRows.length === 0) {
+      editTbody.innerHTML = `<tr><td colspan="${cfg.fields.length + 1}"><div class="empty-state">Belum ada data. Klik "+ Tambah Baris" untuk mulai.</div></td></tr>`;
+      return;
+    }
+    editTbody.innerHTML = workingRows.map((row, idx) => `
+      <tr data-idx="${idx}">
+        ${cfg.fields.map(f => renderEditCell(f, row, idx)).join('')}
+        <td><button type="button" class="edit-row-remove" data-remove="${idx}" title="Hapus baris ini">&times;</button></td>
+      </tr>
+    `).join('');
+
+    editTbody.querySelectorAll('[data-field]').forEach(el => {
+      const handler = (e) => {
+        const idx = +e.target.dataset.idx;
+        const field = e.target.dataset.field;
+        workingRows[idx][field] = e.target.value;
+      };
+      el.addEventListener('input', handler);
+      el.addEventListener('change', handler);
+    });
+    editTbody.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        workingRows.splice(+btn.dataset.remove, 1);
+        renderEditTable();
+      });
+    });
+  }
+
+  addRowBtn.addEventListener('click', () => {
+    const emptyRow = {};
+    cfg.fields.forEach(f => { emptyRow[f.key] = f.type === 'select' ? f.options[0] : ''; });
+    workingRows.push(emptyRow);
+    renderEditTable();
+  });
+
+  function enterEdit() {
+    workingRows = allData.map(r => ({ ...r }));
+    viewWrap.style.display = 'none';
+    editWrap.style.display = 'block';
+    renderEditTable();
+  }
+
+  function exitEdit() {
+    viewWrap.style.display = 'block';
+    editWrap.style.display = 'none';
+  }
+
+  async function save() {
+    const workingIds = new Set(workingRows.filter(r => r.id).map(r => r.id));
+    const toDelete = allData.filter(r => !workingIds.has(r.id));
+    for (const row of toDelete) await API.remove(entityKey, row.id);
+    for (const row of workingRows) {
+      const data = {};
+      cfg.fields.forEach(f => { data[f.key] = (row[f.key] === undefined || row[f.key] === null) ? '' : row[f.key].toString().trim(); });
+      if (row.id) await API.update(entityKey, row.id, data);
+      else await API.create(entityKey, data);
+    }
+    await load();
+    exitEdit();
+  }
+
+  load();
+
+  return { enterEdit, exitEdit, save, reload: load };
+}
+
+/**
+ * Menghubungkan satu set tombol "Edit Data" / "Batal" ke satu atau beberapa
+ * kartu (hasil mountInlineCard / mountInlineTableCard / mountJadwalDinasMatrix).
+ * Klik pertama: semua kartu masuk mode edit. Klik kedua (tombol jadi "Simpan"):
+ * semua kartu disimpan bersamaan. Cocok untuk sub-menu yang punya 1-2 tabel
+ * tapi hanya 1 tombol Edit Data di judul section.
+ */
+function wireEditToggle(editBtnId, cancelBtnId, errId, cards) {
+  const editBtn = document.getElementById(editBtnId);
+  const cancelBtn = document.getElementById(cancelBtnId);
+  const errEl = errId ? document.getElementById(errId) : null;
+  let editing = false;
+
+  editBtn.addEventListener('click', async () => {
+    if (!editing) {
+      cards.forEach(c => c.enterEdit());
+      editing = true;
+      editBtn.textContent = 'Simpan';
+      if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+      if (errEl) errEl.classList.remove('show');
+      return;
+    }
+    editBtn.disabled = true;
+    editBtn.textContent = 'Menyimpan...';
+    try {
+      await Promise.all(cards.map(c => c.save()));
+      editing = false;
+      editBtn.textContent = 'Edit Data';
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    } catch (err) {
+      if (errEl) { errEl.textContent = err.message; errEl.classList.add('show'); }
+      editBtn.textContent = 'Simpan';
+    } finally {
+      editBtn.disabled = false;
+    }
+  });
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      cards.forEach(c => c.exitEdit());
+      editing = false;
+      editBtn.textContent = 'Edit Data';
+      cancelBtn.style.display = 'none';
+    });
+  }
+}
+
 // ---------- Helpers ----------
 function escapeHtml(str) {
   if (str === undefined || str === null) return '';
@@ -472,6 +678,15 @@ function formatDateForInput(value) {
   const d = new Date(value);
   if (isNaN(d)) return '';
   return d.toISOString().split('T')[0];
+}
+function formatDateShort(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (isNaN(d)) return String(value);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}/${mm}/${yy}`;
 }
 function placeholderAvatar() {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="%23ECEDF3"/></svg>');

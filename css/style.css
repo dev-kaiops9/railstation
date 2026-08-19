@@ -291,3 +291,33 @@ a.file-link:hover { text-decoration: underline; }
 .modal .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .foto-preview { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--bg); border: 1px solid var(--border); margin-bottom: 12px; }
+
+/* ---------- Tabel edit inline (mountInlineTableCard) ---------- */
+.edit-table-wrap { overflow-x: auto; }
+.edit-table-wrap table { min-width: 100%; }
+.edit-table-wrap td { padding: 6px 8px; }
+.edit-table-wrap th { white-space: nowrap; }
+.edit-table-wrap input, .edit-table-wrap select {
+  width: 100%; min-width: 90px; padding: 7px 9px; border: 1.5px solid var(--border);
+  border-radius: 6px; font-size: 12.5px; font-family: var(--font); background: #fff;
+}
+.edit-table-wrap input:focus, .edit-table-wrap select:focus { outline: none; border-color: var(--primary); }
+.edit-table-wrap .edit-row-remove { background: none; border: none; color: var(--text-muted); font-size: 17px; line-height: 1; cursor: pointer; padding: 4px; }
+.edit-table-wrap .edit-row-remove:hover { color: var(--red); }
+.edit-table-wrap .add-row-btn { margin-top: 10px; padding-left: 18px; }
+
+/* ---------- Matrix Jadwal Dinas ---------- */
+.matrix-wrap { overflow-x: auto; }
+.matrix-table { min-width: 100%; border-collapse: collapse; }
+.matrix-table th, .matrix-table td { padding: 6px 7px; font-size: 11.5px; text-align: center; white-space: nowrap; border: 1px solid var(--border); }
+.matrix-table thead th { background: #FAFAFD; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--text); }
+.matrix-table td.name-col { text-align: left; font-weight: 600; }
+.matrix-table th.day-sunday { color: var(--red); }
+.matrix-table td.cell-ct { background: #FDE94A; font-weight: 700; }
+.matrix-table td.cell-rest { background: var(--blue); color: #fff; font-weight: 700; }
+.matrix-table td.cell-libur { color: var(--red); font-weight: 700; }
+.matrix-table input[type="text"] {
+  width: 34px; text-align: center; padding: 3px 2px; font-size: 11.5px;
+  border: 1.5px solid var(--border); border-radius: 4px; font-family: var(--font);
+}
+.matrix-table input[type="text"]:focus { outline: none; border-color: var(--primary); }
