@@ -193,7 +193,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .section:last-child { margin-bottom: 0; }
 
 /* ============ INFO CARDS (tampilan data read-only) ============ */
-.info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.info-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+@media (max-width: 720px) { .info-cards { grid-template-columns: 1fr; } }
 .info-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; border: 1px solid var(--border); }
 .info-card h4 { font-size: 13.5px; font-weight: 700; color: var(--primary); padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
 .info-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
