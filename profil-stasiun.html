@@ -16,50 +16,35 @@
   <main class="main">
     <div id="topbarMount"></div>
 
-    <div class="tabs" id="tabs">
-      <button class="tab-btn active" data-target="tabInfo">
-        <span class="tab-icon" data-icon="mapPin"></span>
-        <span class="tab-copy"><span class="tab-title">Informasi &amp; Lokasi</span><span class="tab-desc">Identitas, lokasi, dan fasilitas stasiun</span></span>
-      </button>
-      <button class="tab-btn" data-target="tabJadwalKA">
-        <span class="tab-icon" data-icon="train"></span>
-        <span class="tab-copy"><span class="tab-title">Jadwal KA Berhenti</span><span class="tab-desc">Kereta api yang berhenti di stasiun</span></span>
-      </button>
-    </div>
-
-    <div class="tab-panel active" id="tabInfo">
-      <div class="section">
-        <div class="section-head">
-          <h3>Identitas Stasiun</h3>
-          <div class="section-head-actions">
-            <div class="error-msg" id="profilError" style="margin:0;"></div>
-            <button class="btn btn-secondary btn-sm" id="cancelEditBtn" style="display:none;">Batal</button>
-            <button class="btn btn-primary btn-sm" id="editDataBtn">Edit Data</button>
-          </div>
-        </div>
-        <div class="info-cards">
-          <div class="info-card">
-            <h4>Informasi Stasiun</h4>
-            <div class="info-row"><span class="k">Nama Stasiun</span><span class="v" id="v_nama">—</span></div>
-            <div class="info-row"><span class="k">Singkatan</span><span class="v" id="v_singkatan">—</span></div>
-            <div class="info-row"><span class="k">Kelas</span><span class="v" id="v_kelas">—</span></div>
-            <div class="info-row"><span class="k">Kode</span><span class="v" id="v_kode">—</span></div>
-            <div class="info-row"><span class="k">Waktu Operasional</span><span class="v" id="v_waktuOperasional">—</span></div>
-          </div>
-          <div class="info-card">
-            <h4>Lokasi</h4>
-            <div class="info-row"><span class="k">KM (Kilometer Jalur)</span><span class="v" id="v_km">—</span></div>
-            <div class="info-row"><span class="k">Ketinggian (mdpl)</span><span class="v" id="v_ketinggian">—</span></div>
-            <div class="info-row"><span class="k">Wilayah</span><span class="v" id="v_wilayah">—</span></div>
-            <div class="info-row"><span class="k">Alamat</span><span class="v" id="v_alamat">—</span></div>
-          </div>
-          <div id="fasilitasCard"></div>
-          <div id="fasilitasUmumCard"></div>
+    <div class="section">
+      <div class="section-head">
+        <h3>Identitas Stasiun</h3>
+        <div class="section-head-actions">
+          <div class="error-msg" id="profilError" style="margin:0;"></div>
+          <button class="btn btn-secondary btn-sm" id="cancelEditBtn" style="display:none;">Batal</button>
+          <button class="btn btn-primary btn-sm" id="editDataBtn">Edit Data</button>
         </div>
       </div>
+      <div class="info-cards">
+        <div class="info-card">
+          <h4>Informasi Stasiun</h4>
+          <div class="info-row"><span class="k">Nama Stasiun</span><span class="v" id="v_nama">—</span></div>
+          <div class="info-row"><span class="k">Singkatan</span><span class="v" id="v_singkatan">—</span></div>
+          <div class="info-row"><span class="k">Kelas</span><span class="v" id="v_kelas">—</span></div>
+          <div class="info-row"><span class="k">Kode</span><span class="v" id="v_kode">—</span></div>
+          <div class="info-row"><span class="k">Waktu Operasional</span><span class="v" id="v_waktuOperasional">—</span></div>
+        </div>
+        <div class="info-card">
+          <h4>Lokasi</h4>
+          <div class="info-row"><span class="k">KM (Kilometer Jalur)</span><span class="v" id="v_km">—</span></div>
+          <div class="info-row"><span class="k">Ketinggian (mdpl)</span><span class="v" id="v_ketinggian">—</span></div>
+          <div class="info-row"><span class="k">Wilayah</span><span class="v" id="v_wilayah">—</span></div>
+          <div class="info-row"><span class="k">Alamat</span><span class="v" id="v_alamat">—</span></div>
+        </div>
+        <div id="fasilitasCard"></div>
+        <div id="fasilitasUmumCard"></div>
+      </div>
     </div>
-
-    <div class="tab-panel" id="tabJadwalKA"><div id="jadwalKAPanel"></div></div>
   </main>
 </div>
 
@@ -72,10 +57,8 @@
   const session = await initPage('profil-stasiun', 'Profil Stasiun', 'Identitas, fasilitas, dan jadwal KA yang berhenti di stasiun.');
   if (!session) return;
 
-  initTabs('tabs');
   const fasilitasCard = mountInlineCard('fasilitasCard', 'fasilitas', 'Fasilitas & Layanan Stasiun');
   const fasilitasUmumCard = mountInlineCard('fasilitasUmumCard', 'fasilitasUmum', 'Fasilitas Umum Terdekat');
-  mountCrudSection('jadwalKAPanel', 'jadwalKA', 'Kereta Api yang Berhenti');
 
   const profilKeys = ['nama','singkatan','kelas','kode','waktuOperasional','km','ketinggian','alamat','wilayah'];
   let profilData = {};
