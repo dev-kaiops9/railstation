@@ -30,6 +30,25 @@
     <div class="tab-panel active" id="tabPerka">
       <div class="section">
         <div class="section-head">
+          <h3>Nama Stasiun</h3>
+          <div class="section-head-actions">
+            <div class="error-msg" id="errStasiunNama" style="margin:0;"></div>
+            <button class="btn btn-primary btn-sm" id="saveStasiunNama">Simpan Nama Stasiun</button>
+          </div>
+        </div>
+        <div class="card-panel">
+          <div class="grid-stasiun-nama">
+            <div class="field"><label for="stasiunNamaA">Stasiun A</label><input type="text" id="stasiunNamaA" placeholder="Stasiun A"></div>
+            <div class="field"><label for="stasiunNamaB">Stasiun B</label><input type="text" id="stasiunNamaB" placeholder="Stasiun B"></div>
+            <div class="field"><label for="stasiunNamaC">Stasiun C</label><input type="text" id="stasiunNamaC" placeholder="Stasiun C"></div>
+            <div class="field"><label for="stasiunNamaD">Stasiun D</label><input type="text" id="stasiunNamaD" placeholder="Stasiun D"></div>
+            <div class="field"><label for="stasiunNamaE">Stasiun E</label><input type="text" id="stasiunNamaE" placeholder="Stasiun E"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
           <h3>Daftar Waktu</h3>
           <div class="section-head-actions">
             <div class="error-msg" id="errPerka" style="margin:0;"></div>
@@ -55,12 +74,63 @@
 
   initTabs('tabs');
 
+  // --- Nama Stasiun (dipakai sebagai label header kolom Datang/Berangkat di
+  // tabel Daftar Waktu, karena tiap stasiun beda-beda) — disimpan lewat
+  // mekanisme Profil Stasiun yang sudah ada (getProfil/saveProfil), jadi
+  // tidak perlu sheet atau entitas baru di backend.
+  const STASIUN_KEYS = ['A', 'B', 'C', 'D', 'E'];
+  const profilRes = await API.getProfil();
+  const savedNama = {};
+  STASIUN_KEYS.forEach(k => {
+    const val = (profilRes.ok && profilRes.data['perkaStasiun' + k]) ? profilRes.data['perkaStasiun' + k] : '';
+    savedNama[k] = val;
+    document.getElementById('stasiunNama' + k).value = val;
+  });
+
+  function applyStasiunLabels(nama) {
+    const cfg = ENTITY_CONFIG.perka;
+    const groupIdxByKey = { A: 3, B: 4, C: 5, D: 6, E: 7 };
+    STASIUN_KEYS.forEach(k => {
+      const label = nama[k] && nama[k].trim() ? nama[k].trim() : ('Stasiun ' + k);
+      cfg.tableColumnGroups[groupIdxByKey[k]].label = label;
+      [cfg.tableColumns, cfg.fields].forEach(list => {
+        list.forEach(item => {
+          if (item.key === 'stasiun' + k + 'Datang') item.label = label + ' - Datang';
+          if (item.key === 'stasiun' + k + 'Berangkat') item.label = label + ' - Berangkat';
+        });
+      });
+    });
+  }
+
+  applyStasiunLabels(savedNama);
+
   // --- Sub-menu: Daftar Waktu (edit inline langsung di tabel, seperti Data Pegawai) ---
   const perkaCard = mountInlineTableCard('perkaPanel', 'perka', 'Daftar Waktu', { variant: 'section' });
   wireEditToggle('editPerka', 'cancelPerka', 'errPerka', [perkaCard]);
 
   // --- Sub-menu: Jalur & Emplasemen (tetap pakai modal Kelola/Edit Data) ---
   mountCrudSection('jalurPanel', 'jalur', 'Jalur & Emplasemen');
+
+  // --- Simpan Nama Stasiun ---
+  document.getElementById('saveStasiunNama').addEventListener('click', async () => {
+    const btn = document.getElementById('saveStasiunNama');
+    const errEl = document.getElementById('errStasiunNama');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    errEl.classList.remove('show');
+    try {
+      const data = {};
+      STASIUN_KEYS.forEach(k => { data['perkaStasiun' + k] = document.getElementById('stasiunNama' + k).value.trim(); });
+      const result = await API.saveProfil(data);
+      if (!result.ok) throw new Error(result.error || 'Gagal menyimpan nama stasiun');
+      // Header tabel (thead) dirender sekali saat mount — reload halaman
+      // supaya label baru langsung terpakai di tabel Daftar Waktu.
+      location.reload();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('show');
+      btn.disabled = false; btn.textContent = 'Simpan Nama Stasiun';
+    }
+  });
 })();
 </script>
 </body>
