@@ -465,19 +465,33 @@ function mountInlineTableCard(containerId, entityKey, title, opts = {}) {
   const container = document.getElementById(containerId);
   const variant = opts.variant || 'card';
   const colCount = cfg.tableColumns.length;
+  const tableClass = cfg.tableClass ? ` class="${escapeAttr(cfg.tableClass)}"` : '';
   let allData = [];
   let workingRows = [];
 
+  function renderHeaderRows(cells, extraActionHeader = false) {
+    if (!cells || !cells.length) return '';
+    return cells.map((row, rowIndex) => `<tr>${row.map(cell => {
+      const attrs = [cell.rowspan ? `rowspan="${cell.rowspan}"` : '', cell.colspan ? `colspan="${cell.colspan}"` : ''].filter(Boolean).join(' ');
+      return `<th${attrs ? ' ' + attrs : ''}>${escapeHtml(cell.label || '')}</th>`;
+    }).join('')}${extraActionHeader && rowIndex === 0 ? '<th rowspan="2"></th>' : ''}</tr>`).join('');
+  }
+
+  const groupedHeader = cfg.headerRows && cfg.headerRows.length ? renderHeaderRows(cfg.headerRows) : `<tr>${cfg.tableColumns.map(c => `<th>${c.label}</th>`).join('')}</tr>`;
+  const editHeader = cfg.headerRows && cfg.headerRows.length
+    ? renderHeaderRows(cfg.headerRows, true)
+    : `<tr>${cfg.fields.map(f => `<th>${f.label}</th>`).join('')}<th></th></tr>`;
+
   const inner = `
-    <div data-role="view-wrap">
-      <table>
-        <thead><tr>${cfg.tableColumns.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
+    <div class="daftar-waktu-table-wrap" data-role="view-wrap">
+      <table${tableClass}>
+        <thead>${groupedHeader}</thead>
         <tbody data-role="view-tbody"><tr><td colspan="${colCount}" class="loading-text">Memuat data...</td></tr></tbody>
       </table>
     </div>
     <div class="edit-table-wrap" data-role="edit-wrap" style="display:none;">
-      <table>
-        <thead><tr>${cfg.fields.map(f => `<th>${f.label}</th>`).join('')}<th></th></tr></thead>
+      <table${tableClass}>
+        <thead>${editHeader}</thead>
         <tbody data-role="edit-tbody"></tbody>
       </table>
       <button type="button" class="btn-link add-row-btn" data-role="add-row">+ Tambah Baris</button>
@@ -592,14 +606,26 @@ function mountInlineTableCard(containerId, entityKey, title, opts = {}) {
   }
 
   async function save() {
+    // Validasi field wajib sebelum menyentuh database agar satu baris kosong
+    // tidak ikut tersimpan ketika pengguna menekan "Simpan".
+    const invalidIndex = workingRows.findIndex(row => cfg.fields.some(f =>
+      f.required && String(row[f.key] === undefined || row[f.key] === null ? '' : row[f.key]).trim() === ''
+    ));
+    if (invalidIndex !== -1) {
+      throw new Error(`Baris ${invalidIndex + 1}: ${cfg.fields.find(f => f.required && String(workingRows[invalidIndex][f.key] ?? '').trim() === '').label} wajib diisi.`);
+    }
+
     const workingIds = new Set(workingRows.filter(r => r.id).map(r => r.id));
     const toDelete = allData.filter(r => !workingIds.has(r.id));
-    for (const row of toDelete) await API.remove(entityKey, row.id);
+    for (const row of toDelete) {
+      const result = await API.remove(entityKey, row.id);
+      if (!result.ok) throw new Error(result.error || 'Gagal menghapus data.');
+    }
     for (const row of workingRows) {
       const data = {};
       cfg.fields.forEach(f => { data[f.key] = (row[f.key] === undefined || row[f.key] === null) ? '' : row[f.key].toString().trim(); });
-      if (row.id) await API.update(entityKey, row.id, data);
-      else await API.create(entityKey, data);
+      const result = row.id ? await API.update(entityKey, row.id, data) : await API.create(entityKey, data);
+      if (!result.ok) throw new Error(result.error || 'Gagal menyimpan data.');
     }
     await load();
     exitEdit();

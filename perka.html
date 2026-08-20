@@ -19,7 +19,7 @@
     <div class="tabs" id="tabs">
       <button class="tab-btn active" data-target="tabPerka">
         <span class="tab-icon" data-icon="train"></span>
-        <span class="tab-copy"><span class="tab-title">Perjalanan Kereta Api</span><span class="tab-desc">Data perjalanan KA di stasiun</span></span>
+        <span class="tab-copy"><span class="tab-title">Daftar Waktu</span><span class="tab-desc">Waktu datang dan berangkat kereta api</span></span>
       </button>
       <button class="tab-btn" data-target="tabJalur">
         <span class="tab-icon" data-icon="route"></span>
@@ -27,7 +27,17 @@
       </button>
     </div>
 
-    <div class="tab-panel active" id="tabPerka"><div id="perkaPanel"></div></div>
+    <div class="tab-panel active" id="tabPerka">
+      <div class="section-head" style="margin-bottom:14px;">
+        <h3 style="visibility:hidden;">.</h3>
+        <div class="section-head-actions">
+          <div class="error-msg" id="errPerka" style="margin:0;"></div>
+          <button class="btn btn-secondary btn-sm" id="cancelPerka" style="display:none;">Batal</button>
+          <button class="btn btn-primary btn-sm" id="editPerka">Edit Data</button>
+        </div>
+      </div>
+      <div id="perkaPanel"></div>
+    </div>
     <div class="tab-panel" id="tabJalur"><div id="jalurPanel"></div></div>
   </main>
 </div>
@@ -42,7 +52,8 @@
   if (!session) return;
 
   initTabs('tabs');
-  mountCrudSection('perkaPanel', 'perka', 'Daftar Perjalanan');
+  const perkaCard = mountInlineTableCard('perkaPanel', 'perka', 'Daftar Waktu', { variant: 'section' });
+  wireEditToggle('editPerka', 'cancelPerka', 'errPerka', [perkaCard]);
   mountCrudSection('jalurPanel', 'jalur', 'Jalur & Emplasemen');
 })();
 </script>
