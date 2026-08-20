@@ -18,7 +18,7 @@
 
     <div class="stat-grid" id="statGrid">
       <div class="stat-card"><div class="icon-badge green" id="iconPegawai"></div><div><div class="label">Pegawai Aktif</div><div class="value" id="statPegawai">—</div></div></div>
-      <div class="stat-card"><div class="icon-badge blue" id="iconPerka"></div><div><div class="label">Perjalanan Hari Ini</div><div class="value" id="statPerka">—</div></div></div>
+      <div class="stat-card"><div class="icon-badge blue" id="iconPerka"></div><div><div class="label">Jumlah KA Terjadwal</div><div class="value" id="statPerka">—</div></div></div>
       <div class="stat-card"><div class="icon-badge orange" id="iconGangguan"></div><div><div class="label">Gangguan Aktif</div><div class="value" id="statGangguan">—</div></div></div>
       <div class="stat-card"><div class="icon-badge purple" id="iconCuaca"></div><div><div class="label">Estimasi Cuaca</div><div class="value" id="statCuaca">Cerah</div></div></div>
     </div>
@@ -28,7 +28,7 @@
         <h3>Ringkasan Operasional</h3>
         <p style="color:var(--text-muted); font-size:13px; line-height:1.7;">
           Dashboard ini menampilkan ringkasan real-time operasional stasiun: jumlah pegawai aktif,
-          jumlah perjalanan kereta api hari ini, dan gangguan operasional yang masih berjalan.
+          jumlah KA yang terjadwal melalui stasiun, dan gangguan operasional yang masih berjalan.
           Gunakan menu di samping untuk masuk ke tiap modul.
         </p>
       </div>
@@ -58,7 +58,7 @@
   const statsRes = await API.dashboardStats();
   if (statsRes.ok) {
     document.getElementById('statPegawai').textContent = statsRes.data.pegawaiAktif;
-    document.getElementById('statPerka').textContent = statsRes.data.perjalananHariIni;
+    document.getElementById('statPerka').textContent = statsRes.data.totalPerka;
     document.getElementById('statGangguan').textContent = statsRes.data.gangguanAktif;
   }
 

@@ -259,11 +259,18 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 table { width: 100%; border-collapse: collapse; }
 th {
   text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);
-  padding: 13px 18px; border-bottom: 1px solid var(--border); background: #FAFAFD;
+  padding: 13px 18px; border-bottom: 1px solid var(--border); background: #FAFAFD; vertical-align: middle;
 }
 td { padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #FAFAFD; }
+
+/* Pembungkus tabel mode-lihat (mountInlineTableCard) — scroll horizontal
+   sendiri supaya tabel berkolom banyak (mis. Daftar Waktu Perka) tidak
+   terpotong oleh overflow:hidden milik .card-panel / .compact-card. */
+[data-role="view-wrap"] { overflow-x: auto; }
+[data-role="view-wrap"] table { min-width: 100%; }
+[data-role="view-wrap"] th { white-space: nowrap; }
 
 .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: var(--border); display: inline-block; vertical-align: middle; }
 .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 100px; }
@@ -305,26 +312,6 @@ a.file-link:hover { text-decoration: underline; }
 .edit-table-wrap .edit-row-remove { background: none; border: none; color: var(--text-muted); font-size: 17px; line-height: 1; cursor: pointer; padding: 4px; }
 .edit-table-wrap .edit-row-remove:hover { color: var(--red); }
 .edit-table-wrap .add-row-btn { margin-top: 10px; padding-left: 18px; }
-
-/* ---------- Daftar Waktu KA (format tabel mengikuti spreadsheet) ---------- */
-.daftar-waktu-table-wrap { overflow-x: auto; width: 100%; }
-.daftar-waktu-table { min-width: 1180px; table-layout: fixed; }
-.daftar-waktu-table th,
-.daftar-waktu-table td { text-align: center; white-space: nowrap; border-right: 1px solid var(--border); }
-.daftar-waktu-table th { padding: 9px 8px; font-size: 10.5px; line-height: 1.15; }
-.daftar-waktu-table td { padding: 8px 7px; font-size: 12px; }
-.daftar-waktu-table th:last-child,
-.daftar-waktu-table td:last-child { border-right: none; }
-.daftar-waktu-table thead tr:first-child th { vertical-align: middle; font-weight: 700; }
-.daftar-waktu-table thead tr:nth-child(2) th { font-size: 9.5px; }
-.daftar-waktu-table input,
-.daftar-waktu-table select { min-width: 0; width: 100%; box-sizing: border-box; }
-.daftar-waktu-table th:nth-child(1) { width: 86px; }
-.daftar-waktu-table th:nth-child(2) { width: 130px; }
-.daftar-waktu-table th:nth-child(3) { width: 130px; }
-.daftar-waktu-table th:nth-child(n+4):nth-child(-n+13) { width: 82px; }
-.daftar-waktu-table th:nth-child(14) { width: 150px; }
-.daftar-waktu-table td:last-child { min-width: 130px; }
 
 /* ---------- Matrix Jadwal Dinas ---------- */
 .matrix-wrap { overflow-x: auto; }
