@@ -13,12 +13,27 @@ const API = (() => {
 
   async function post(action, payload = {}) {
     const body = JSON.stringify({ action, token: getToken(), ...payload });
-    const res = await fetch(BASE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body,
-    });
-    return res.json();
+    let res;
+    try {
+      res = await fetch(BASE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body,
+      });
+    } catch (err) {
+      return { ok: false, error: 'Tidak bisa terhubung ke server. Cek koneksi internet Anda.' };
+    }
+    // Apps Script kadang membalas HTML (bukan JSON) — mis. URL deployment salah,
+    // deployment belum di-authorize ulang, atau kuota terlampaui. res.json()
+    // langsung akan melempar error mentah dari browser kalau ini dibiarkan,
+    // jadi di sini responsnya dibaca sebagai teks dulu lalu di-parse manual
+    // supaya bisa ditampilkan pesan yang jelas ke pengguna.
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      return { ok: false, error: 'Server tidak membalas dengan format yang benar. Kemungkinan URL API di js/api.js salah atau deployment Apps Script perlu di-update ulang (Deploy > Manage deployments > New version).' };
+    }
   }
 
   async function login(username, password) {

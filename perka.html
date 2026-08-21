@@ -30,13 +30,24 @@
     <div class="tab-panel active" id="tabPerka">
       <div class="section">
         <div class="section-head">
-          <h3>Nama Stasiun</h3>
+          <h3>Daftar Waktu</h3>
           <div class="section-head-actions">
-            <div class="error-msg" id="errStasiunNama" style="margin:0;"></div>
-            <button class="btn btn-primary btn-sm" id="saveStasiunNama">Simpan Nama Stasiun</button>
+            <div class="error-msg" id="errPerka" style="margin:0;"></div>
+            <button class="btn btn-secondary btn-sm" id="cancelPerka" style="display:none;">Batal</button>
+            <button class="btn btn-secondary btn-sm" id="editStasiun">Edit Stasiun</button>
+            <button class="btn btn-primary btn-sm" id="editPerka">Edit Data</button>
           </div>
         </div>
-        <div class="card-panel">
+
+        <div class="card-panel" id="stasiunNamaForm" style="display:none; margin-bottom:16px;">
+          <div class="section-head" style="padding:16px 16px 0 16px; margin-bottom:0;">
+            <h4 style="font-size:13px; font-weight:700; color:var(--primary);">Nama Stasiun</h4>
+            <div class="section-head-actions">
+              <div class="error-msg" id="errStasiunNama" style="margin:0;"></div>
+              <button class="btn btn-secondary btn-sm" id="cancelStasiunNama">Batal</button>
+              <button class="btn btn-primary btn-sm" id="saveStasiunNama">Simpan Nama Stasiun</button>
+            </div>
+          </div>
           <div class="grid-stasiun-nama">
             <div class="field"><label for="stasiunNamaA">Stasiun A</label><input type="text" id="stasiunNamaA" placeholder="Stasiun A"></div>
             <div class="field"><label for="stasiunNamaB">Stasiun B</label><input type="text" id="stasiunNamaB" placeholder="Stasiun B"></div>
@@ -45,17 +56,7 @@
             <div class="field"><label for="stasiunNamaE">Stasiun E</label><input type="text" id="stasiunNamaE" placeholder="Stasiun E"></div>
           </div>
         </div>
-      </div>
 
-      <div class="section">
-        <div class="section-head">
-          <h3>Daftar Waktu</h3>
-          <div class="section-head-actions">
-            <div class="error-msg" id="errPerka" style="margin:0;"></div>
-            <button class="btn btn-secondary btn-sm" id="cancelPerka" style="display:none;">Batal</button>
-            <button class="btn btn-primary btn-sm" id="editPerka">Edit Data</button>
-          </div>
-        </div>
         <div id="perkaPanel"></div>
       </div>
     </div>
@@ -105,29 +106,61 @@
   applyStasiunLabels(savedNama);
 
   // --- Sub-menu: Daftar Waktu (edit inline langsung di tabel, seperti Data Pegawai) ---
-  const perkaCard = mountInlineTableCard('perkaPanel', 'perka', 'Daftar Waktu', { variant: 'section' });
+  // variant 'plain': judul & tombol "Edit Data" sudah disediakan manual di section-head
+  // di atas, jadi kartu ini tidak perlu render judul sendiri (biar tidak dobel).
+  const perkaCard = mountInlineTableCard('perkaPanel', 'perka', 'Daftar Waktu', { variant: 'plain' });
   wireEditToggle('editPerka', 'cancelPerka', 'errPerka', [perkaCard]);
 
   // --- Sub-menu: Jalur & Emplasemen (tetap pakai modal Kelola/Edit Data) ---
   mountCrudSection('jalurPanel', 'jalur', 'Jalur & Emplasemen');
 
+  // --- Toggle form Nama Stasiun: disembunyikan secara default, muncul saat
+  // tombol "Edit Stasiun" diklik, dan disembunyikan lagi setelah disimpan
+  // atau dibatalkan. ---
+  const stasiunForm = document.getElementById('stasiunNamaForm');
+  const editStasiunBtn = document.getElementById('editStasiun');
+  const errStasiunEl = document.getElementById('errStasiunNama');
+
+  function resetStasiunInputs() {
+    STASIUN_KEYS.forEach(k => { document.getElementById('stasiunNama' + k).value = savedNama[k]; });
+  }
+
+  function showStasiunForm() {
+    resetStasiunInputs();
+    errStasiunEl.classList.remove('show');
+    stasiunForm.style.display = 'block';
+  }
+
+  function hideStasiunForm() {
+    stasiunForm.style.display = 'none';
+  }
+
+  editStasiunBtn.addEventListener('click', () => {
+    if (stasiunForm.style.display === 'none') showStasiunForm();
+    else hideStasiunForm();
+  });
+
+  document.getElementById('cancelStasiunNama').addEventListener('click', () => {
+    hideStasiunForm();
+  });
+
   // --- Simpan Nama Stasiun ---
   document.getElementById('saveStasiunNama').addEventListener('click', async () => {
     const btn = document.getElementById('saveStasiunNama');
-    const errEl = document.getElementById('errStasiunNama');
     btn.disabled = true; btn.textContent = 'Menyimpan...';
-    errEl.classList.remove('show');
+    errStasiunEl.classList.remove('show');
     try {
       const data = {};
       STASIUN_KEYS.forEach(k => { data['perkaStasiun' + k] = document.getElementById('stasiunNama' + k).value.trim(); });
       const result = await API.saveProfil(data);
       if (!result.ok) throw new Error(result.error || 'Gagal menyimpan nama stasiun');
-      // Header tabel (thead) dirender sekali saat mount — reload halaman
-      // supaya label baru langsung terpakai di tabel Daftar Waktu.
+      // Header tabel (thead) dirender sekali saat mount — reload halaman supaya
+      // label baru langsung terpakai di tabel Daftar Waktu. Form otomatis
+      // tersembunyi lagi setelah reload karena defaultnya display:none.
       location.reload();
     } catch (err) {
-      errEl.textContent = err.message;
-      errEl.classList.add('show');
+      errStasiunEl.textContent = err.message;
+      errStasiunEl.classList.add('show');
       btn.disabled = false; btn.textContent = 'Simpan Nama Stasiun';
     }
   });

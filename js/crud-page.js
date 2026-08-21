@@ -457,8 +457,12 @@ function mountInlineCard(containerId, entityKey, title) {
  * sesuai cfg.tableColumns (mode baca) dan cfg.fields (mode edit, per sel).
  * Tidak punya tombol sendiri — dikontrol dari luar lewat wireEditToggle()
  * atau langsung lewat objek yang dikembalikan: { enterEdit, exitEdit, save, reload }.
- * opts.variant: 'card' (kartu kecil bertepi, default — untuk 2 kartu berdampingan)
- *               atau 'section' (lebar penuh dengan judul h3 — untuk tabel utama).
+ * opts.variant: 'card' (kartu kecil bertepi, default — untuk 2 kartu berdampingan),
+ *               'section' (lebar penuh dengan judul h3 sendiri — untuk tabel utama
+ *               yang berdiri sendiri tanpa section-head eksternal), atau
+ *               'plain' (cuma kartu tabelnya, tanpa judul/section pembungkus —
+ *               dipakai kalau judul & tombol aksi sudah disediakan manual di HTML
+ *               pemanggil, supaya judul tidak dobel).
  */
 function mountInlineTableCard(containerId, entityKey, title, opts = {}) {
   const cfg = ENTITY_CONFIG[entityKey];
@@ -499,6 +503,8 @@ function mountInlineTableCard(containerId, entityKey, title, opts = {}) {
       <div class="section-head"><h3>${title}</h3></div>
       <div class="card-panel">${inner}</div>
     </div>
+  ` : variant === 'plain' ? `
+    <div class="card-panel">${inner}</div>
   ` : `
     <div class="info-card compact-card">
       <div class="compact-card-head"><h4>${title}</h4></div>
