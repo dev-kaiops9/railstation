@@ -60,7 +60,34 @@
         <div id="perkaPanel"></div>
       </div>
     </div>
-    <div class="tab-panel" id="tabJalur"><div id="jalurPanel"></div></div>
+    <div class="tab-panel" id="tabJalur">
+      <div class="section">
+        <div class="section-head">
+          <h3>Gambar Emplasemen</h3>
+          <div class="section-head-actions">
+            <div class="error-msg" id="errEmplasemenGambar" style="margin:0;"></div>
+            <button class="btn btn-primary btn-sm" id="saveEmplasemenGambar">Simpan Gambar</button>
+          </div>
+        </div>
+        <div class="card-panel emplasemen-card">
+          <div class="emplasemen-preview-wrap" id="emplasemenPreviewWrap">
+            <img id="emplasemenPreviewImg" class="emplasemen-preview-img" style="display:none;" alt="Gambar Emplasemen">
+            <div class="emplasemen-empty" id="emplasemenEmptyState">
+              <span class="icon" data-icon="route" style="width:40px;height:40px;color:var(--text-soft);"></span>
+              <p>Belum ada gambar emplasemen.</p>
+              <p class="emplasemen-empty-sub">Pilih gambar (denah/foto emplasemen), lalu klik "Simpan Gambar".</p>
+            </div>
+          </div>
+          <div class="emplasemen-upload-row">
+            <label class="btn btn-secondary btn-sm" for="emplasemenFileInput">Pilih Gambar</label>
+            <input type="file" id="emplasemenFileInput" accept="image/*" style="display:none;">
+            <span class="emplasemen-filename" id="emplasemenFileName">Belum ada gambar dipilih.</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="jalurPanel"></div>
+    </div>
   </main>
 </div>
 
@@ -113,6 +140,78 @@
 
   // --- Sub-menu: Jalur & Emplasemen (tetap pakai modal Kelola/Edit Data) ---
   mountCrudSection('jalurPanel', 'jalur', 'Jalur & Emplasemen');
+
+  // --- Gambar Emplasemen: upload gambar besar (denah/foto emplasemen).
+  // File-nya diupload ke Google Drive lewat API.uploadFile (folder terpisah
+  // "Emplasemen" di Drive), lalu URL & fileId hasilnya disimpan sebagai key
+  // baru di Profil Stasiun (getProfil/saveProfil yang sudah ada) — sama
+  // seperti pola Nama Stasiun di atas, jadi tidak perlu sheet/entitas baru.
+  const emplasemenPreviewImg = document.getElementById('emplasemenPreviewImg');
+  const emplasemenEmptyState = document.getElementById('emplasemenEmptyState');
+  const emplasemenFileInput = document.getElementById('emplasemenFileInput');
+  const emplasemenFileName = document.getElementById('emplasemenFileName');
+  const saveEmplasemenBtn = document.getElementById('saveEmplasemenGambar');
+  const errEmplasemenEl = document.getElementById('errEmplasemenGambar');
+  let emplasemenSelectedFile = null;
+
+  function showEmplasemenPreview(url) {
+    if (url) {
+      emplasemenPreviewImg.src = url;
+      emplasemenPreviewImg.style.display = 'block';
+      emplasemenEmptyState.style.display = 'none';
+    } else {
+      emplasemenPreviewImg.style.display = 'none';
+      emplasemenEmptyState.style.display = 'block';
+    }
+  }
+
+  // profilRes sudah diambil sekali di atas (dipakai juga untuk Nama Stasiun)
+  showEmplasemenPreview(profilRes.ok ? profilRes.data.emplasemenGambarUrl : '');
+
+  emplasemenFileInput.addEventListener('change', () => {
+    const file = emplasemenFileInput.files[0];
+    errEmplasemenEl.classList.remove('show');
+    if (!file) {
+      emplasemenSelectedFile = null;
+      emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
+      return;
+    }
+    emplasemenSelectedFile = file;
+    emplasemenFileName.textContent = file.name;
+    // Preview lokal langsung (sebelum diupload) supaya pengguna lihat gambar
+    // yang dipilih tanpa harus menunggu proses simpan selesai dulu.
+    showEmplasemenPreview(URL.createObjectURL(file));
+  });
+
+  saveEmplasemenBtn.addEventListener('click', async () => {
+    if (!emplasemenSelectedFile) {
+      errEmplasemenEl.textContent = 'Pilih gambar terlebih dahulu sebelum menyimpan.';
+      errEmplasemenEl.classList.add('show');
+      return;
+    }
+    saveEmplasemenBtn.disabled = true;
+    saveEmplasemenBtn.textContent = 'Mengunggah...';
+    errEmplasemenEl.classList.remove('show');
+    try {
+      const uploadResult = await API.uploadFile(emplasemenSelectedFile, 'Emplasemen');
+      if (!uploadResult.ok) throw new Error(uploadResult.error || 'Gagal mengunggah gambar ke Google Drive');
+      const saveResult = await API.saveProfil({
+        emplasemenGambarUrl: uploadResult.data.url,
+        emplasemenGambarFileId: uploadResult.data.fileId,
+      });
+      if (!saveResult.ok) throw new Error(saveResult.error || 'Gagal menyimpan referensi gambar');
+      showEmplasemenPreview(uploadResult.data.url);
+      emplasemenSelectedFile = null;
+      emplasemenFileInput.value = '';
+      emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
+    } catch (err) {
+      errEmplasemenEl.textContent = err.message;
+      errEmplasemenEl.classList.add('show');
+    } finally {
+      saveEmplasemenBtn.disabled = false;
+      saveEmplasemenBtn.textContent = 'Simpan Gambar';
+    }
+  });
 
   // --- Toggle form Nama Stasiun: disembunyikan secara default, muncul saat
   // tombol "Edit Stasiun" diklik, dan disembunyikan lagi setelah disimpan
