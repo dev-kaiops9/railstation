@@ -270,6 +270,11 @@ td { padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 13px
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #FAFAFD; }
 
+/* Highlight kolom tertentu di tabel (mis. Stasiun C di Daftar Waktu Perka)
+   dengan warna biru transparan, supaya kolom itu gampang dibedakan sekilas. */
+th.col-highlight, td.col-highlight { background: rgba(62, 142, 247, 0.12); }
+tr:hover td.col-highlight { background: rgba(62, 142, 247, 0.20); }
+
 /* Pembungkus tabel mode-lihat (mountInlineTableCard) — scroll horizontal
    sendiri supaya tabel berkolom banyak (mis. Daftar Waktu Perka) tidak
    terpotong oleh overflow:hidden milik .card-panel / .compact-card. */

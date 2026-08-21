@@ -476,10 +476,10 @@ function mountInlineTableCard(containerId, entityKey, title, opts = {}) {
   // dikelompokkan per stasiun dengan sub-kolom Datang/Berangkat), kalau tidak
   // pakai header 1 baris biasa dari cfg.tableColumns.
   const viewTheadHtml = cfg.tableColumnGroups ? `
-    <tr>${cfg.tableColumnGroups.map(g => `<th ${g.rowspan ? `rowspan="${g.rowspan}"` : ''} ${g.colspan ? `colspan="${g.colspan}"` : ''}>${g.label}</th>`).join('')}</tr>
-    <tr>${(cfg.tableColumnGroupsRow2 || []).map(l => `<th>${l}</th>`).join('')}</tr>
+    <tr>${cfg.tableColumnGroups.map(g => `<th ${g.rowspan ? `rowspan="${g.rowspan}"` : ''} ${g.colspan ? `colspan="${g.colspan}"` : ''} class="${g.highlight ? 'col-highlight' : ''}">${g.label}</th>`).join('')}</tr>
+    <tr>${(cfg.tableColumnGroupsRow2 || []).map(item => `<th class="${item.highlight ? 'col-highlight' : ''}">${item.label}</th>`).join('')}</tr>
   ` : `
-    <tr>${cfg.tableColumns.map(c => `<th>${c.label}</th>`).join('')}</tr>
+    <tr>${cfg.tableColumns.map(c => `<th class="${c.highlight ? 'col-highlight' : ''}">${c.label}</th>`).join('')}</tr>
   `;
 
   const inner = `
@@ -520,8 +520,9 @@ function mountInlineTableCard(containerId, entityKey, title, opts = {}) {
 
   function renderCellLocal(c, row) {
     const val = row[c.key];
-    if (c.isPhoto) return `<td><img class="avatar" src="${row.fotoUrl || placeholderAvatar()}" alt=""></td>`;
-    if (c.isDate) return `<td>${escapeHtml(formatDateShort(val))}</td>`;
+    const hlClass = c.highlight ? ' class="col-highlight"' : '';
+    if (c.isPhoto) return `<td${hlClass}><img class="avatar" src="${row.fotoUrl || placeholderAvatar()}" alt=""></td>`;
+    if (c.isDate) return `<td${hlClass}>${escapeHtml(formatDateShort(val))}</td>`;
     // Kolom "Datang" yang berpasangan dengan kolom "Berangkat" (mis. Daftar
     // Waktu Perka): kalau jam datang & berangkat sama persis, tampilkan teks
     // "Ls" (langsung lanjut / tidak berhenti) di kolom Datang — cuma tampilan
@@ -530,12 +531,12 @@ function mountInlineTableCard(containerId, entityKey, title, opts = {}) {
     if (c.sameAsKey) {
       const pairVal = row[c.sameAsKey];
       if (val !== undefined && val !== null && val !== '' && val === pairVal) {
-        return `<td>Ls</td>`;
+        return `<td${hlClass}>Ls</td>`;
       }
     }
-    if (c.isTime) return `<td>${escapeHtml(formatTimeShort(val))}</td>`;
-    if (c.isBadge && val) return `<td><span class="badge badge-${badgeColor(val)}">${escapeHtml(val)}</span></td>`;
-    return `<td>${escapeHtml(formatCellValue(val))}</td>`;
+    if (c.isTime) return `<td${hlClass}>${escapeHtml(formatTimeShort(val))}</td>`;
+    if (c.isBadge && val) return `<td${hlClass}><span class="badge badge-${badgeColor(val)}">${escapeHtml(val)}</span></td>`;
+    return `<td${hlClass}>${escapeHtml(formatCellValue(val))}</td>`;
   }
 
   async function load() {
