@@ -165,8 +165,18 @@
     }
   }
 
+  // URL "uc?export=view" dari Google Drive kadang tidak stabil dipakai
+  // langsung sebagai src <img> — Drive bisa membalas halaman peringatan
+  // (bukan file gambar mentah) sehingga gambar gagal tampil walau file-nya
+  // valid. Endpoint thumbnail jauh lebih stabil untuk kasus ini, jadi URL
+  // tampilan selalu dibangun dari fileId yang tersimpan, bukan dari field
+  // url mentahnya.
+  function driveThumbnailUrl(fileId) {
+    return fileId ? ('https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1600') : '';
+  }
+
   // profilRes sudah diambil sekali di atas (dipakai juga untuk Nama Stasiun)
-  showEmplasemenPreview(profilRes.ok ? profilRes.data.emplasemenGambarUrl : '');
+  showEmplasemenPreview(profilRes.ok ? driveThumbnailUrl(profilRes.data.emplasemenGambarFileId) : '');
 
   emplasemenFileInput.addEventListener('change', () => {
     const file = emplasemenFileInput.files[0];
@@ -200,7 +210,7 @@
         emplasemenGambarFileId: uploadResult.data.fileId,
       });
       if (!saveResult.ok) throw new Error(saveResult.error || 'Gagal menyimpan referensi gambar');
-      showEmplasemenPreview(uploadResult.data.url);
+      showEmplasemenPreview(driveThumbnailUrl(uploadResult.data.fileId));
       emplasemenSelectedFile = null;
       emplasemenFileInput.value = '';
       emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
