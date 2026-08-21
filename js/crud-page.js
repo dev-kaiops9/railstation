@@ -522,6 +522,18 @@ function mountInlineTableCard(containerId, entityKey, title, opts = {}) {
     const val = row[c.key];
     if (c.isPhoto) return `<td><img class="avatar" src="${row.fotoUrl || placeholderAvatar()}" alt=""></td>`;
     if (c.isDate) return `<td>${escapeHtml(formatDateShort(val))}</td>`;
+    // Kolom "Datang" yang berpasangan dengan kolom "Berangkat" (mis. Daftar
+    // Waktu Perka): kalau jam datang & berangkat sama persis, tampilkan teks
+    // "Ls" (langsung lanjut / tidak berhenti) di kolom Datang — cuma tampilan
+    // di tabel, nilai asli di baris & di Google Sheets tetap jam yang sama
+    // (perbandingan di bawah pakai nilai mentah, sebelum diformat).
+    if (c.sameAsKey) {
+      const pairVal = row[c.sameAsKey];
+      if (val !== undefined && val !== null && val !== '' && val === pairVal) {
+        return `<td>Ls</td>`;
+      }
+    }
+    if (c.isTime) return `<td>${escapeHtml(formatTimeShort(val))}</td>`;
     if (c.isBadge && val) return `<td><span class="badge badge-${badgeColor(val)}">${escapeHtml(val)}</span></td>`;
     return `<td>${escapeHtml(formatCellValue(val))}</td>`;
   }
@@ -703,6 +715,19 @@ function formatDateShort(value) {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yy = String(d.getFullYear()).slice(-2);
   return `${dd}/${mm}/${yy}`;
+}
+function formatTimeShort(value) {
+  if (!value) return '';
+  // Google Sheets menyimpan input type="time" (mis. "14:30") sebagai nilai
+  // waktu (Date dengan tanggal epoch 1899-12-30), yang lewat JSON jadi string
+  // ISO. Kalau sudah format "HH:mm" polos (belum sempat disimpan), tampilkan
+  // apa adanya. Kalau ISO/Date, ambil jam:menit lokal browser.
+  if (typeof value === 'string' && /^\d{1,2}:\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (isNaN(d)) return String(value);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
 }
 function placeholderAvatar() {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="%23ECEDF3"/></svg>');
