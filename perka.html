@@ -66,7 +66,9 @@
           <h3>Gambar Emplasemen</h3>
           <div class="section-head-actions">
             <div class="error-msg" id="errEmplasemenGambar" style="margin:0;"></div>
-            <button class="btn btn-primary btn-sm" id="saveEmplasemenGambar">Simpan Gambar</button>
+            <button class="btn btn-secondary btn-sm" id="cancelEmplasemenGambar" style="display:none;">Batal</button>
+            <button class="btn btn-primary btn-sm" id="saveEmplasemenGambar" style="display:none;">Simpan Gambar</button>
+            <button class="btn btn-primary btn-sm" id="editEmplasemenGambar">Edit Data</button>
           </div>
         </div>
         <div class="card-panel emplasemen-card">
@@ -75,10 +77,10 @@
             <div class="emplasemen-empty" id="emplasemenEmptyState">
               <span class="icon" data-icon="route" style="width:40px;height:40px;color:var(--text-soft);"></span>
               <p>Belum ada gambar emplasemen.</p>
-              <p class="emplasemen-empty-sub">Pilih gambar (denah/foto emplasemen), lalu klik "Simpan Gambar".</p>
+              <p class="emplasemen-empty-sub">Klik "Edit Data" untuk memilih dan menyimpan gambar.</p>
             </div>
           </div>
-          <div class="emplasemen-upload-row">
+          <div class="emplasemen-upload-row" id="emplasemenUploadRow" style="display:none;">
             <label class="btn btn-secondary btn-sm" for="emplasemenFileInput">Pilih Gambar</label>
             <input type="file" id="emplasemenFileInput" accept="image/*" style="display:none;">
             <span class="emplasemen-filename" id="emplasemenFileName">Belum ada gambar dipilih.</span>
@@ -148,11 +150,15 @@
   // seperti pola Nama Stasiun di atas, jadi tidak perlu sheet/entitas baru.
   const emplasemenPreviewImg = document.getElementById('emplasemenPreviewImg');
   const emplasemenEmptyState = document.getElementById('emplasemenEmptyState');
+  const emplasemenUploadRow = document.getElementById('emplasemenUploadRow');
   const emplasemenFileInput = document.getElementById('emplasemenFileInput');
   const emplasemenFileName = document.getElementById('emplasemenFileName');
+  const editEmplasemenBtn = document.getElementById('editEmplasemenGambar');
   const saveEmplasemenBtn = document.getElementById('saveEmplasemenGambar');
+  const cancelEmplasemenBtn = document.getElementById('cancelEmplasemenGambar');
   const errEmplasemenEl = document.getElementById('errEmplasemenGambar');
   let emplasemenSelectedFile = null;
+  let emplasemenSavedFileId = null;
 
   function showEmplasemenPreview(url) {
     if (url) {
@@ -176,7 +182,40 @@
   }
 
   // profilRes sudah diambil sekali di atas (dipakai juga untuk Nama Stasiun)
-  showEmplasemenPreview(profilRes.ok ? driveThumbnailUrl(profilRes.data.emplasemenGambarFileId) : '');
+  emplasemenSavedFileId = profilRes.ok ? profilRes.data.emplasemenGambarFileId : '';
+  showEmplasemenPreview(driveThumbnailUrl(emplasemenSavedFileId));
+
+  // --- Toggle edit-mode: default hanya tombol "Edit Data" yang tampil.
+  // Saat diklik, baris upload ("Pilih Gambar") + tombol "Simpan Gambar" &
+  // "Batal" muncul, dan tombol "Edit Data" disembunyikan — jadi cuma 1
+  // tombol edit yang mengendalikan mode edit gambar ini. ---
+  function enterEmplasemenEditMode() {
+    errEmplasemenEl.classList.remove('show');
+    emplasemenUploadRow.style.display = 'flex';
+    saveEmplasemenBtn.style.display = '';
+    cancelEmplasemenBtn.style.display = '';
+    editEmplasemenBtn.style.display = 'none';
+  }
+
+  function exitEmplasemenEditMode() {
+    emplasemenUploadRow.style.display = 'none';
+    saveEmplasemenBtn.style.display = 'none';
+    cancelEmplasemenBtn.style.display = 'none';
+    editEmplasemenBtn.style.display = '';
+    errEmplasemenEl.classList.remove('show');
+  }
+
+  editEmplasemenBtn.addEventListener('click', () => {
+    enterEmplasemenEditMode();
+  });
+
+  cancelEmplasemenBtn.addEventListener('click', () => {
+    emplasemenSelectedFile = null;
+    emplasemenFileInput.value = '';
+    emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
+    showEmplasemenPreview(driveThumbnailUrl(emplasemenSavedFileId));
+    exitEmplasemenEditMode();
+  });
 
   emplasemenFileInput.addEventListener('change', () => {
     const file = emplasemenFileInput.files[0];
@@ -210,10 +249,12 @@
         emplasemenGambarFileId: uploadResult.data.fileId,
       });
       if (!saveResult.ok) throw new Error(saveResult.error || 'Gagal menyimpan referensi gambar');
-      showEmplasemenPreview(driveThumbnailUrl(uploadResult.data.fileId));
+      emplasemenSavedFileId = uploadResult.data.fileId;
+      showEmplasemenPreview(driveThumbnailUrl(emplasemenSavedFileId));
       emplasemenSelectedFile = null;
       emplasemenFileInput.value = '';
       emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
+      exitEmplasemenEditMode();
     } catch (err) {
       errEmplasemenEl.textContent = err.message;
       errEmplasemenEl.classList.add('show');
