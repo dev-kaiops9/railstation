@@ -353,3 +353,29 @@ a.file-link:hover { text-decoration: underline; }
   border: 1.5px solid var(--border); border-radius: 4px; font-family: var(--font);
 }
 .matrix-table input[type="text"]:focus { outline: none; border-color: var(--primary); }
+
+/* ---------- Global loading overlay (popup saat memuat data) ---------- */
+.global-loading-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(20, 22, 41, 0.35);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.global-loading-overlay.show { opacity: 1; pointer-events: auto; }
+.global-loading-box {
+  background: #fff; border-radius: 14px; padding: 22px 30px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 12px 40px rgba(20, 22, 41, 0.25);
+  transform: translateY(6px); transition: transform 0.15s ease;
+}
+.global-loading-overlay.show .global-loading-box { transform: translateY(0); }
+.global-loading-spinner {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border: 3px solid rgba(76, 95, 213, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: global-loading-spin 0.7s linear infinite;
+}
+.global-loading-text { font-size: 13.5px; font-weight: 600; color: var(--text); }
+@keyframes global-loading-spin { to { transform: rotate(360deg); } }

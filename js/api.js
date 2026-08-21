@@ -1,4 +1,53 @@
 /**
+ * Popup loading global — muncul otomatis setiap kali ada request ke server
+ * sedang berjalan (lewat API.post / API.uploadFile), dan hilang lagi begitu
+ * semua request selesai. Pakai counter supaya beberapa request yang
+ * berbarengan tidak saling menutup popup sebelum semuanya benar-benar
+ * selesai.
+ */
+const GlobalLoading = (() => {
+  let activeCount = 0;
+  let overlayEl = null;
+  let hideTimer = null;
+
+  function ensureOverlay() {
+    if (overlayEl) return overlayEl;
+    overlayEl = document.createElement('div');
+    overlayEl.className = 'global-loading-overlay';
+    overlayEl.innerHTML = `
+      <div class="global-loading-box">
+        <div class="global-loading-spinner"></div>
+        <div class="global-loading-text">Memuat data...</div>
+      </div>
+    `;
+    document.body.appendChild(overlayEl);
+    return overlayEl;
+  }
+
+  function show() {
+    activeCount++;
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    // document.body belum tentu ada kalau show() dipanggil sebelum <body>
+    // selesai di-parse (script api.js diletakkan sebelum konten) — tunda
+    // sampai DOM siap.
+    if (document.body) ensureOverlay().classList.add('show');
+    else document.addEventListener('DOMContentLoaded', () => ensureOverlay().classList.add('show'), { once: true });
+  }
+
+  function hide() {
+    activeCount = Math.max(0, activeCount - 1);
+    if (activeCount > 0) return;
+    // Delay kecil supaya tidak "berkedip" untuk request yang sangat cepat,
+    // dan supaya popup sempat terlihat sesaat sebelum hilang.
+    hideTimer = setTimeout(() => {
+      if (overlayEl) overlayEl.classList.remove('show');
+    }, 120);
+  }
+
+  return { show, hide };
+})();
+
+/**
  * Wrapper komunikasi ke Apps Script Web App.
  * GANTI BASE_URL dengan URL hasil "Deploy > New deployment > Web app".
  */
@@ -13,6 +62,7 @@ const API = (() => {
 
   async function post(action, payload = {}) {
     const body = JSON.stringify({ action, token: getToken(), ...payload });
+    GlobalLoading.show();
     let res;
     try {
       res = await fetch(BASE_URL, {
@@ -22,6 +72,8 @@ const API = (() => {
       });
     } catch (err) {
       return { ok: false, error: 'Tidak bisa terhubung ke server. Cek koneksi internet Anda.' };
+    } finally {
+      GlobalLoading.hide();
     }
     // Apps Script kadang membalas HTML (bukan JSON) — mis. URL deployment salah,
     // deployment belum di-authorize ulang, atau kuota terlampaui. res.json()
