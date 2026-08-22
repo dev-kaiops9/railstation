@@ -63,15 +63,16 @@
     <div class="tab-panel" id="tabJalur">
       <div class="section">
         <div class="section-head">
-          <h3>Gambar Emplasemen</h3>
+          <h3>Jalur &amp; Emplasemen</h3>
           <div class="section-head-actions">
-            <div class="error-msg" id="errEmplasemenGambar" style="margin:0;"></div>
-            <button class="btn btn-secondary btn-sm" id="cancelEmplasemenGambar" style="display:none;">Batal</button>
-            <button class="btn btn-primary btn-sm" id="saveEmplasemenGambar" style="display:none;">Simpan Gambar</button>
-            <button class="btn btn-primary btn-sm" id="editEmplasemenGambar">Edit Data</button>
+            <div class="error-msg" id="errJalur" style="margin:0;"></div>
+            <button class="btn btn-secondary btn-sm" id="cancelJalur" style="display:none;">Batal</button>
+            <button class="btn btn-primary btn-sm" id="editJalur">Edit Data</button>
           </div>
         </div>
-        <div class="card-panel emplasemen-card">
+
+        <h4 style="font-size:13px; font-weight:700; color:var(--primary); margin:0 0 10px;">Gambar Emplasemen</h4>
+        <div class="card-panel emplasemen-card" style="margin-bottom:16px;">
           <div class="emplasemen-preview-wrap" id="emplasemenPreviewWrap">
             <img id="emplasemenPreviewImg" class="emplasemen-preview-img" style="display:none;" alt="Gambar Emplasemen">
             <div class="emplasemen-empty" id="emplasemenEmptyState">
@@ -86,17 +87,7 @@
             <span class="emplasemen-filename" id="emplasemenFileName">Belum ada gambar dipilih.</span>
           </div>
         </div>
-      </div>
 
-      <div class="section">
-        <div class="section-head">
-          <h3>Jalur &amp; Emplasemen</h3>
-          <div class="section-head-actions">
-            <div class="error-msg" id="errJalur" style="margin:0;"></div>
-            <button class="btn btn-secondary btn-sm" id="cancelJalur" style="display:none;">Batal</button>
-            <button class="btn btn-primary btn-sm" id="editJalur">Edit Data</button>
-          </div>
-        </div>
         <div id="jalurPanel"></div>
       </div>
     </div>
@@ -150,26 +141,17 @@
   const perkaCard = mountInlineTableCard('perkaPanel', 'perka', 'Daftar Waktu', { variant: 'plain' });
   wireEditToggle('editPerka', 'cancelPerka', 'errPerka', [perkaCard]);
 
-  // --- Sub-menu: Jalur & Emplasemen (edit inline langsung di tabel, sama
-  // seperti Daftar Waktu — 1 tombol "Edit Data" di section-head mengontrol
-  // mode edit untuk semua baris sekaligus, bukan modal per baris). ---
-  const jalurCard = mountInlineTableCard('jalurPanel', 'jalur', 'Jalur & Emplasemen', { variant: 'plain' });
-  wireEditToggle('editJalur', 'cancelJalur', 'errJalur', [jalurCard]);
-
-  // --- Gambar Emplasemen: upload gambar besar (denah/foto emplasemen).
-  // File-nya diupload ke Google Drive lewat API.uploadFile (folder terpisah
-  // "Emplasemen" di Drive), lalu URL & fileId hasilnya disimpan sebagai key
-  // baru di Profil Stasiun (getProfil/saveProfil yang sudah ada) — sama
-  // seperti pola Nama Stasiun di atas, jadi tidak perlu sheet/entitas baru.
+  // --- Sub-menu: Jalur & Emplasemen — SATU tombol "Edit Data" di section-head
+  // mengendalikan mode edit untuk Gambar Emplasemen DAN tabel Jalur & Emplasemen
+  // sekaligus (bukan 2 tombol Edit Data terpisah seperti sebelumnya). Caranya:
+  // gambar emplasemen dibungkus jadi objek { enterEdit, exitEdit, save } dengan
+  // bentuk yang sama seperti kartu dari mountInlineTableCard, lalu keduanya
+  // didaftarkan bersama ke satu wireEditToggle().
   const emplasemenPreviewImg = document.getElementById('emplasemenPreviewImg');
   const emplasemenEmptyState = document.getElementById('emplasemenEmptyState');
   const emplasemenUploadRow = document.getElementById('emplasemenUploadRow');
   const emplasemenFileInput = document.getElementById('emplasemenFileInput');
   const emplasemenFileName = document.getElementById('emplasemenFileName');
-  const editEmplasemenBtn = document.getElementById('editEmplasemenGambar');
-  const saveEmplasemenBtn = document.getElementById('saveEmplasemenGambar');
-  const cancelEmplasemenBtn = document.getElementById('cancelEmplasemenGambar');
-  const errEmplasemenEl = document.getElementById('errEmplasemenGambar');
   let emplasemenSelectedFile = null;
   let emplasemenSavedFileId = null;
 
@@ -198,41 +180,8 @@
   emplasemenSavedFileId = profilRes.ok ? profilRes.data.emplasemenGambarFileId : '';
   showEmplasemenPreview(driveThumbnailUrl(emplasemenSavedFileId));
 
-  // --- Toggle edit-mode: default hanya tombol "Edit Data" yang tampil.
-  // Saat diklik, baris upload ("Pilih Gambar") + tombol "Simpan Gambar" &
-  // "Batal" muncul, dan tombol "Edit Data" disembunyikan — jadi cuma 1
-  // tombol edit yang mengendalikan mode edit gambar ini. ---
-  function enterEmplasemenEditMode() {
-    errEmplasemenEl.classList.remove('show');
-    emplasemenUploadRow.style.display = 'flex';
-    saveEmplasemenBtn.style.display = '';
-    cancelEmplasemenBtn.style.display = '';
-    editEmplasemenBtn.style.display = 'none';
-  }
-
-  function exitEmplasemenEditMode() {
-    emplasemenUploadRow.style.display = 'none';
-    saveEmplasemenBtn.style.display = 'none';
-    cancelEmplasemenBtn.style.display = 'none';
-    editEmplasemenBtn.style.display = '';
-    errEmplasemenEl.classList.remove('show');
-  }
-
-  editEmplasemenBtn.addEventListener('click', () => {
-    enterEmplasemenEditMode();
-  });
-
-  cancelEmplasemenBtn.addEventListener('click', () => {
-    emplasemenSelectedFile = null;
-    emplasemenFileInput.value = '';
-    emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
-    showEmplasemenPreview(driveThumbnailUrl(emplasemenSavedFileId));
-    exitEmplasemenEditMode();
-  });
-
   emplasemenFileInput.addEventListener('change', () => {
     const file = emplasemenFileInput.files[0];
-    errEmplasemenEl.classList.remove('show');
     if (!file) {
       emplasemenSelectedFile = null;
       emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
@@ -245,16 +194,22 @@
     showEmplasemenPreview(URL.createObjectURL(file));
   });
 
-  saveEmplasemenBtn.addEventListener('click', async () => {
-    if (!emplasemenSelectedFile) {
-      errEmplasemenEl.textContent = 'Pilih gambar terlebih dahulu sebelum menyimpan.';
-      errEmplasemenEl.classList.add('show');
-      return;
-    }
-    saveEmplasemenBtn.disabled = true;
-    saveEmplasemenBtn.textContent = 'Mengunggah...';
-    errEmplasemenEl.classList.remove('show');
-    try {
+  const emplasemenCard = {
+    enterEdit() {
+      emplasemenUploadRow.style.display = 'flex';
+    },
+    exitEdit() {
+      emplasemenSelectedFile = null;
+      emplasemenFileInput.value = '';
+      emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
+      showEmplasemenPreview(driveThumbnailUrl(emplasemenSavedFileId));
+      emplasemenUploadRow.style.display = 'none';
+    },
+    // Kalau tidak ada gambar baru yang dipilih, tidak melakukan apa-apa (bukan
+    // error) — supaya menyimpan perubahan tabel Jalur & Emplasemen saja tanpa
+    // mengganti gambar tetap berhasil lewat tombol "Edit Data" yang sama.
+    async save() {
+      if (!emplasemenSelectedFile) return;
       const uploadResult = await API.uploadFile(emplasemenSelectedFile, 'Emplasemen');
       if (!uploadResult.ok) throw new Error(uploadResult.error || 'Gagal mengunggah gambar ke Google Drive');
       const saveResult = await API.saveProfil({
@@ -267,15 +222,12 @@
       emplasemenSelectedFile = null;
       emplasemenFileInput.value = '';
       emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
-      exitEmplasemenEditMode();
-    } catch (err) {
-      errEmplasemenEl.textContent = err.message;
-      errEmplasemenEl.classList.add('show');
-    } finally {
-      saveEmplasemenBtn.disabled = false;
-      saveEmplasemenBtn.textContent = 'Simpan Gambar';
-    }
-  });
+      emplasemenUploadRow.style.display = 'none';
+    },
+  };
+
+  const jalurCard = mountInlineTableCard('jalurPanel', 'jalur', 'Jalur & Emplasemen', { variant: 'plain' });
+  wireEditToggle('editJalur', 'cancelJalur', 'errJalur', [emplasemenCard, jalurCard]);
 
   // --- Toggle form Nama Stasiun: disembunyikan secara default, muncul saat
   // tombol "Edit Stasiun" diklik, dan disembunyikan lagi setelah disimpan
