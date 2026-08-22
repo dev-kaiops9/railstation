@@ -249,19 +249,42 @@ const ENTITY_CONFIG = {
     ],
   },
   jalur: {
-    label: 'Jalur & Emplasemen', labelSingular: 'Jalur',
-    searchKeys: ['namaJalur'],
-    tableColumns: [
-      { key: 'namaJalur', label: 'Nama Jalur' },
-      { key: 'panjangM', label: 'Panjang (m)' },
-      { key: 'kapasitas', label: 'Kapasitas' },
-      { key: 'spesifikasi', label: 'Spesifikasi' },
+    label: 'Jalur Efektif', labelSingular: 'Jalur Efektif',
+    searchKeys: ['jalur'],
+    // Header 2 baris: baris atas JALUR/PANJANG/EFEKTIF/KAPASITAS(gabungan 5 kolom)/JENIS,
+    // baris bawah cuma untuk sub-kolom di bawah KAPASITAS (Kereta, GB, GD, GT, GK).
+    tableColumnGroups: [
+      { label: 'Jalur', rowspan: 2 },
+      { label: 'Panjang', rowspan: 2 },
+      { label: 'Efektif', rowspan: 2 },
+      { label: 'Kapasitas', colspan: 5 },
+      { label: 'Jenis', rowspan: 2 },
     ],
+    tableColumnGroupsRow2: [
+      { label: 'Kereta' }, { label: 'GB' }, { label: 'GD' }, { label: 'GT' }, { label: 'GK' },
+    ],
+    tableColumns: [
+      { key: 'jalur', label: 'Jalur' },
+      { key: 'panjang', label: 'Panjang' },
+      { key: 'efektif', label: 'Efektif' },
+      { key: 'kapasitasKereta', label: 'Kereta' },
+      { key: 'kapasitasGB', label: 'GB' },
+      { key: 'kapasitasGD', label: 'GD' },
+      { key: 'kapasitasGT', label: 'GT' },
+      { key: 'kapasitasGK', label: 'GK' },
+      { key: 'jenis', label: 'Jenis' },
+    ],
+    // Semua kolom input text biasa (bukan number/select/date) sesuai permintaan.
     fields: [
-      { key: 'namaJalur', label: 'Nama Jalur', type: 'text', required: true },
-      { key: 'panjangM', label: 'Panjang (meter)', type: 'number' },
-      { key: 'kapasitas', label: 'Kapasitas', type: 'text' },
-      { key: 'spesifikasi', label: 'Spesifikasi Teknis', type: 'text' },
+      { key: 'jalur', label: 'Jalur', type: 'text', required: true },
+      { key: 'panjang', label: 'Panjang', type: 'text' },
+      { key: 'efektif', label: 'Efektif', type: 'text' },
+      { key: 'kapasitasKereta', label: 'Kereta', type: 'text' },
+      { key: 'kapasitasGB', label: 'GB', type: 'text' },
+      { key: 'kapasitasGD', label: 'GD', type: 'text' },
+      { key: 'kapasitasGT', label: 'GT', type: 'text' },
+      { key: 'kapasitasGK', label: 'GK', type: 'text' },
+      { key: 'jenis', label: 'Jenis', type: 'text' },
     ],
   },
   ibpr: {

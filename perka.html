@@ -88,6 +88,7 @@
           </div>
         </div>
 
+        <h4 style="font-size:13px; font-weight:700; color:var(--primary); margin:0 0 10px;">Jalur Efektif</h4>
         <div id="jalurPanel"></div>
       </div>
     </div>
@@ -205,20 +206,23 @@
       showEmplasemenPreview(driveThumbnailUrl(emplasemenSavedFileId));
       emplasemenUploadRow.style.display = 'none';
     },
-    // Kalau tidak ada gambar baru yang dipilih, tidak melakukan apa-apa (bukan
-    // error) — supaya menyimpan perubahan tabel Jalur & Emplasemen saja tanpa
-    // mengganti gambar tetap berhasil lewat tombol "Edit Data" yang sama.
+    // Kalau tidak ada gambar baru yang dipilih, tidak upload apa-apa — tapi tetap
+    // reset & tutup baris upload di akhir (lewat blok di bawah), supaya sesudah
+    // "Simpan" ditekan (baik ganti gambar atau tidak), kartu ini selalu balik ke
+    // mode baca. Sebelumnya early-return di sini membuat baris "Pilih Gambar"
+    // tetap kebuka kalau pengguna cuma menyimpan perubahan tabel tanpa ganti gambar.
     async save() {
-      if (!emplasemenSelectedFile) return;
-      const uploadResult = await API.uploadFile(emplasemenSelectedFile, 'Emplasemen');
-      if (!uploadResult.ok) throw new Error(uploadResult.error || 'Gagal mengunggah gambar ke Google Drive');
-      const saveResult = await API.saveProfil({
-        emplasemenGambarUrl: uploadResult.data.url,
-        emplasemenGambarFileId: uploadResult.data.fileId,
-      });
-      if (!saveResult.ok) throw new Error(saveResult.error || 'Gagal menyimpan referensi gambar');
-      emplasemenSavedFileId = uploadResult.data.fileId;
-      showEmplasemenPreview(driveThumbnailUrl(emplasemenSavedFileId));
+      if (emplasemenSelectedFile) {
+        const uploadResult = await API.uploadFile(emplasemenSelectedFile, 'Emplasemen');
+        if (!uploadResult.ok) throw new Error(uploadResult.error || 'Gagal mengunggah gambar ke Google Drive');
+        const saveResult = await API.saveProfil({
+          emplasemenGambarUrl: uploadResult.data.url,
+          emplasemenGambarFileId: uploadResult.data.fileId,
+        });
+        if (!saveResult.ok) throw new Error(saveResult.error || 'Gagal menyimpan referensi gambar');
+        emplasemenSavedFileId = uploadResult.data.fileId;
+        showEmplasemenPreview(driveThumbnailUrl(emplasemenSavedFileId));
+      }
       emplasemenSelectedFile = null;
       emplasemenFileInput.value = '';
       emplasemenFileName.textContent = 'Belum ada gambar dipilih.';
@@ -226,7 +230,7 @@
     },
   };
 
-  const jalurCard = mountInlineTableCard('jalurPanel', 'jalur', 'Jalur & Emplasemen', { variant: 'plain' });
+  const jalurCard = mountInlineTableCard('jalurPanel', 'jalur', 'Jalur Efektif', { variant: 'plain' });
   wireEditToggle('editJalur', 'cancelJalur', 'errJalur', [emplasemenCard, jalurCard]);
 
   // --- Toggle form Nama Stasiun: disembunyikan secara default, muncul saat
