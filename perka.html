@@ -88,7 +88,17 @@
         </div>
       </div>
 
-      <div id="jalurPanel"></div>
+      <div class="section">
+        <div class="section-head">
+          <h3>Jalur &amp; Emplasemen</h3>
+          <div class="section-head-actions">
+            <div class="error-msg" id="errJalur" style="margin:0;"></div>
+            <button class="btn btn-secondary btn-sm" id="cancelJalur" style="display:none;">Batal</button>
+            <button class="btn btn-primary btn-sm" id="editJalur">Edit Data</button>
+          </div>
+        </div>
+        <div id="jalurPanel"></div>
+      </div>
     </div>
   </main>
 </div>
@@ -140,8 +150,11 @@
   const perkaCard = mountInlineTableCard('perkaPanel', 'perka', 'Daftar Waktu', { variant: 'plain' });
   wireEditToggle('editPerka', 'cancelPerka', 'errPerka', [perkaCard]);
 
-  // --- Sub-menu: Jalur & Emplasemen (tetap pakai modal Kelola/Edit Data) ---
-  mountCrudSection('jalurPanel', 'jalur', 'Jalur & Emplasemen');
+  // --- Sub-menu: Jalur & Emplasemen (edit inline langsung di tabel, sama
+  // seperti Daftar Waktu — 1 tombol "Edit Data" di section-head mengontrol
+  // mode edit untuk semua baris sekaligus, bukan modal per baris). ---
+  const jalurCard = mountInlineTableCard('jalurPanel', 'jalur', 'Jalur & Emplasemen', { variant: 'plain' });
+  wireEditToggle('editJalur', 'cancelJalur', 'errJalur', [jalurCard]);
 
   // --- Gambar Emplasemen: upload gambar besar (denah/foto emplasemen).
   // File-nya diupload ke Google Drive lewat API.uploadFile (folder terpisah
